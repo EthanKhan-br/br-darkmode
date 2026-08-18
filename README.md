@@ -36,7 +36,15 @@ else. No `tabs`, no `activeTab`, no `<all_urls>`, no background service worker.
 - `src/fixes.css` — site-specific corrections, currently a TODO checklist. **Never write a
   hashed MUI selector** (`.css-1ab2c3`) here; use structural ones (`nav`, `[aria-label]`).
 
-## Not done yet
+## QA
 
-Steps 5–7 of [businessrocketdarkplan.md](businessrocketdarkplan.md): page-by-page walk,
-the `fixes.css` pass, and the contrast audit. Those need a logged-in browser.
+`tools/chrome-qa-brief.md` briefs Claude in Chrome to walk the portal and report
+defects. `tools/contrast-audit.js` is a console script that flags sub-AA text.
+
+After changing any color in `src/fixes.css`, run:
+
+```
+node tools/verify-fixes.js
+```
+
+It asserts every value still clears its WCAG threshold and still appears in the CSS.
