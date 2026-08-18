@@ -1,0 +1,36 @@
+/* Flash-killer. At document_start no data-br-dark attribute exists yet, so this
+   matches and the page paints dark before first paint. content.js sets the
+   attribute to "off" once storage resolves, reverting it.
+   Known ceiling: a brief DARK flash when the mode is Off. Storage reads are
+   async, nothing beats first paint. Better than a white flash when On. */
+html:not([data-br-dark="off"]) {
+  background: #151821 !important;
+}
+
+/* ---------------------------------------------------------------------------
+   SITE FIXES -- all TODO. Nothing below is implemented on purpose: every item
+   is a guess until we screenshot the logged-in portal. Rules for problems that
+   don't exist are worse than no rules, because you can't tell which ones are
+   load-bearing.
+
+   Write structural selectors only -- nav, [role="button"], [aria-label], data
+   attributes. NEVER a hashed MUI class (.css-1ab2c3); those rehash every deploy
+   and each one is a future silent breakage.
+
+   [ ] 1. Sidebar -- already dark navy; engine will try to lighten it. Pin it.
+   [ ] 2. Logo (navy + orange on white) -- goes muddy. filter: brightness(1.6)
+          on the img, or swap a white-knockout asset.
+   [ ] 3. Stat cards (21 DAY ALERT, 127) -- already dark. Leave them.
+   [ ] 4. Unread badges (orange 6 / 3 pills) -- saturated accent vibrates on
+          dark. Drop saturation ~15%.
+   [ ] 5. The 200 SVG icons -- most should ride currentColor. Spot-check the
+          sidebar glyphs and the WhatsApp/chat icons.
+   [ ] 6. The 3 iframes -- all_frames covers same-origin. Cross-origin (likely
+          the chat widget) cannot be themed by any extension: leave or hide.
+   [ ] 7. The shadow root -- needs adoptedStyleSheets. DarkReader claims to
+          handle it; verify.
+   [ ] 8. Avatars / client photos -- must NOT invert. Default behavior, verify.
+   [ ] 9. Focus rings + MUI outlined inputs -- go near-invisible on dark. Set
+          border color explicitly.
+   [ ] 10. Charts on Company Orders / Invoices / Lead Manager.
+   --------------------------------------------------------------------------- */
