@@ -64,23 +64,17 @@ html:not([data-br-dark="off"]) p.version-label {
   color: rgb(146, 160, 186) !important;
 }
 
-/* --- 4. Logo ----------------------------------------------------------------
-   External SVG the engine can't recolor, so the navy "BUSINESS" wordmark sat at
-   1.19:1 on the near-black sidebar. filter: brightness() is not the answer -- it
-   clipped the orange script's red channel at 255 and turned it yellow (anything
-   above ~1.08 does; CSS filters can't raise lightness without touching hue).
-   Instead, restore the light background the logo was drawn for. Navy reads at
-   11.48:1 on #eef1f5 and both halves keep their true brand color. The orange sits
-   at 2.45:1, essentially what it is on white -- logos are exempt from WCAG
-   contrast, and this is the artwork as designed.
-   Off-white rather than #fff to cut glare. box-shadow spread rather than padding
-   so the plaque costs no layout shift in the sidebar.
-   img[alt="rocky-icon"] is already white -- leave it. */
-html:not([data-br-dark="off"]) img[alt="logo"] {
-  background-color: #eef1f5 !important;
-  box-shadow: 0 0 0 8px #eef1f5 !important;
-  border-radius: 4px !important;
-}
+/* --- 4. Logo ---- INTENTIONALLY UNSTYLED -----------------------------------
+   The navy "BUSINESS" wordmark sits at 1.19:1 on the near-black sidebar. Two
+   fixes were tried and both rejected, don't re-attempt either:
+   - filter: brightness(1.9) clipped the orange script's red channel at 255 and
+     turned it yellow. Anything above ~1.08 does; CSS filters cannot raise
+     lightness without shifting hue.
+   - A light plaque behind the img read as a white block in the dark sidebar.
+     Owner rejected it on looks (2026-08-18).
+   Leaving it alone. WCAG exempts logotypes from contrast requirements, and the
+   orange half is legible regardless. A white-knockout SVG asset is the only
+   remaining option, and needs the real artwork. */
 
 /* --- 5. Primary buttons -----------------------------------------------------
    Blue fills kept their lightness while labels went light. rgb(34,110,158) was
