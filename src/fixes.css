@@ -25,8 +25,10 @@ html:not([data-br-dark="off"]) {
           dark. Drop saturation ~15%.
    [ ] 5. The 200 SVG icons -- most should ride currentColor. Spot-check the
           sidebar glyphs and the WhatsApp/chat icons.
-   [ ] 6. The 3 iframes -- all_frames covers same-origin. Cross-origin (likely
-          the chat widget) cannot be themed by any extension: leave or hide.
+   [x] 6. Cross-origin resources -- ACCEPTED AS-IS 2026-08-18. TinyMCE editor
+          (cdn.tiny.cloud skin) renders fully light; owner is fine with it.
+          Fixing needs a background service worker + wider host_permissions,
+          which was explicitly declined. Same goes for cross-origin iframes.
    [ ] 7. The shadow root -- needs adoptedStyleSheets. DarkReader claims to
           handle it; verify.
    [ ] 8. Avatars / client photos -- must NOT invert. Default behavior, verify.

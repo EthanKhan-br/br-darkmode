@@ -8,9 +8,12 @@ function apply(mode) {
   document.documentElement.dataset.brDark = want ? 'on' : 'off';
   if (want === applied) return;
   applied = want;
-  // ponytail: 2 cross-origin stylesheets on this portal may not theme. If they
-  // stay light, the fix is DarkReader.setFetchMethod routed through a background
-  // service worker (which also needs that origin in host_permissions).
+  // ponytail: CONFIRMED + ACCEPTED (2026-08-18). Two cross-origin stylesheets
+  // don't theme: fonts.googleapis.com (@font-face only, no colors, harmless) and
+  // cdn.tiny.cloud's TinyMCE skin -- so the rich-text editor stays light. Owner
+  // decided that's fine and explicitly ruled out the fix, which would need a
+  // background service worker plus cdn.tiny.cloud in host_permissions. Don't
+  // re-open without that permission-widening being wanted.
   want ? DarkReader.enable(BR_THEME) : DarkReader.disable();
 }
 
