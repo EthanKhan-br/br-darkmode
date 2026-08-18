@@ -37,8 +37,8 @@ check('primary button', ratio(FG, [26, 92, 134]), 4.5);
 check('worst chip @ 40%', Math.min(...CHIPS.map((c) => ratio(FG, darken(c, 0.4)))), 4.5);
 // State indicators: a selection fill is carried by its label too, so these target
 // "unmistakable" rather than the 3:1 a bare boundary would need.
-check('active pill vs sidebar', ratio([42, 68, 105], SIDE), 1.45);
-check('active pill text', ratio([226, 232, 240], [42, 68, 105]), 4.5);
+check('active tint vs sidebar', ratio([37, 48, 66], SIDE), 1.1);
+check('active label on tint', ratio([226, 232, 240], [37, 48, 66]), 4.5);
 // The label must also stand clear of the inactive rows -- on a tint this subtle,
 // brightness is half the signal.
 check('active vs inactive label', ratio([226, 232, 240], [146, 160, 186]), 1.8);
@@ -47,7 +47,7 @@ check('hover row text', ratio([178, 190, 212], [50, 56, 72]), 4.5);
 
 console.log('--- values still in fixes.css ---');
 for (const v of ['rgb(107, 120, 150)', 'rgb(110, 175, 240)', 'rgb(146, 160, 186)',
-                 'rgb(26, 92, 134)', 'rgba(0, 0, 0, 0.4)', 'rgb(42, 68, 105)', 'rgb(226, 232, 240)',
+                 'rgb(26, 92, 134)', 'rgba(0, 0, 0, 0.4)', 'rgb(37, 48, 66)', 'rgb(226, 232, 240)',
                  'rgb(50, 56, 72)', 'rgb(178, 190, 212)'])
   line(css.includes(v), 'css value', v);
 
