@@ -72,22 +72,5 @@ for (const [name, src] of [['fixes.css', css], ['content.js', js]]) {
   line(hits.length === 0, 'no generated classes', `${name}${hits.length ? ' -> ' + hits.join(' ') : ''}`);
 }
 
-// Pull bgIsPainted out of content.js so this can't drift from the real thing. It
-// decides which submenu row is the current page.
-console.log('--- content.js bgIsPainted ---');
-const fnSrc = js.match(/function bgIsPainted[\s\S]*?\n}/);
-if (!fnSrc) line(false, 'bgIsPainted', 'not found in content.js');
-else {
-  const bgIsPainted = eval('(' + fnSrc[0] + ')');
-  for (const [input, want] of [
-    ['rgba(0, 0, 0, 0)', false],          // inactive row
-    ['rgba(10, 10, 10, 0.04)', true],     // active submenu row today
-    ['rgb(34, 38, 48)', true],            // if Dark Reader drops the alpha
-    ['rgba(255, 255, 255, 0)', false],
-    ['transparent', false],
-    ['', false],
-  ]) line(bgIsPainted(input) === want, 'bgIsPainted', `${JSON.stringify(input)} -> ${want}`);
-}
-
 console.log(failed ? `\n${failed} FAILED` : '\nall checks passed');
 process.exit(failed ? 1 : 0);

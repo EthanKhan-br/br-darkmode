@@ -25,52 +25,26 @@ function apply(mode) {
    registration order, so an unrelated component added anywhere earlier renumbers
    them -- never hardcode one. There are no hrefs to match either: the sidebar rows
    are plain divs navigating via onClick router pushes.
-   So detect the row by relative structure and expose our own hook for fixes.css. */
+   So detect the row by relative structure and expose our own hook for fixes.css.
+
+   Top-level rows only. Submenu children (Submissions / Reports / ...) are marked
+   with background rgba(10,10,10,0.04) -- about one RGB step, invisible in light
+   mode too. Owner saw that and accepted it as-is (2026-08-18), so there is
+   deliberately no sub-item detection here. */
 function navRows() {
   // Author-written class, 11 of them, sidebar-only -- the one durable hook here.
   return [...document.querySelectorAll('div.extra-class')].map((d) => d.parentElement);
 }
-function navSubItems() {
-  // Submenu children. The 4 collapsible group headers are the ones directly
-  // inside a <ul>; those never take an active state, so drop them.
-  return [...document.querySelectorAll('div[role="button"]')]
-    .filter((el) => el.parentElement && !el.parentElement.matches('ul'));
-}
-
-// Is this background painted at all? Inactive rows are rgba(0,0,0,0). Active ones
-// are rgba(10,10,10,0.04) today, but Dark Reader may rewrite that to an opaque
-// rgb(), so a missing alpha channel counts as painted rather than as no-match.
-// Extracted and exercised by tools/verify-fixes.js -- keep it a pure function.
-function bgIsPainted(bg) {
-  const c = (bg || '').match(/[\d.]+/g);
-  if (!c || c.length < 3) return false;      // 'transparent', 'none', ''
-  return c.length < 4 || Number(c[3]) > 0;   // no alpha = opaque
-}
 
 function tagActiveNav() {
-  const rows = navRows(), subs = navSubItems();
-  // Clear before measuring. Our own [data-br-active] styling sets a background,
-  // which the sub-item test below would otherwise read back as the active signal
-  // and latch a stale row on forever. getComputedStyle forces a style recalc, so
-  // the reads after this loop see the portal's own values.
-  [...rows, ...subs].forEach((el) => el.removeAttribute('data-br-active'));
+  const rows = navRows();
+  rows.forEach((el) => el.removeAttribute('data-br-active'));
   if (!applied) return;
-
-  // Top level: the active row carries exactly one class more than its siblings.
+  // The active row carries exactly one class more than its siblings. Reading class
+  // counts rather than our own styling keeps this immune to what fixes.css paints.
   const base = Math.min(...rows.map((r) => r.classList.length));
   rows.forEach((r) => {
     if (r.classList.length > base) r.setAttribute('data-br-active', '');
-  });
-
-  // Submenu children have identical classes, so the only signal is a
-  // non-transparent background (rgba(10,10,10,0.04) -- about one RGB step, which
-  // is why it's invisible in dark mode). MUI uses the same 4% for :hover, hence
-  // the exclusion, or whatever the pointer is over would read as current.
-  subs.forEach((el) => {
-    const c = getComputedStyle(el).backgroundColor.match(/[\d.]+/g);
-    if (c && c.length > 3 && +c[3] > 0 && !el.matches(':hover')) {
-      el.setAttribute('data-br-active', '');
-    }
   });
 }
 
