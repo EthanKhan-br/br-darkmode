@@ -3,7 +3,7 @@ const buttons = document.querySelectorAll('button');
 const mark = (mode) =>
   buttons.forEach((b) => b.setAttribute('aria-pressed', b.dataset.mode === mode));
 
-chrome.storage.sync.get({ mode: 'auto' }, ({ mode }) => mark(mode));
+chrome.storage.sync.get({ mode: 'on' }, ({ mode }) => mark(mode));
 
 // Write only. Every open portal tab picks this up via storage.onChanged.
 buttons.forEach((b) =>

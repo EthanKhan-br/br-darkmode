@@ -12,9 +12,12 @@ Then `chrome://extensions` → enable **Developer mode** → **Load unpacked** �
 
 ## Use
 
-Click the toolbar icon: **Off** / **On** / **Auto** (follows your OS theme). The choice
-rides `chrome.storage.sync`, so it follows your Chrome profile to other machines and
-applies to every open portal tab at once.
+Click the toolbar icon: **On** / **Off**. Defaults to On. The choice rides
+`chrome.storage.sync`, so it follows your Chrome profile to other machines and applies
+to every open portal tab at once.
+
+There is deliberately no follow-the-system mode: `prefers-color-scheme` tracks Chrome's
+own appearance setting rather than Windows, which made it more confusing than useful.
 
 ## Why it's built this way
 
