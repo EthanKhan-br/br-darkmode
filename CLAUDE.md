@@ -128,9 +128,12 @@ div.jss36[.jss37]            <- row; the extra class carries the active backgrou
 - No `aria-current`, no data attributes, no inline styles, no pseudo-element
   marker, no border or box-shadow difference. The extra class is the only signal.
 - **Submenu children have no class difference at all** — all identical. Their only
-  active signal is `background-color: rgba(10,10,10,0.04)`, roughly one RGB step.
-  MUI uses that same 4% for `:hover`, hence the `:hover` exclusion in
-  `tagActiveNav()`.
+  active signal is `background-color: rgba(10,10,10,0.04)`, roughly one RGB step,
+  which is invisible in light mode too. Owner saw this and **accepted it as-is**
+  (2026-08-18), so `tagActiveNav()` handles top-level rows only. Sub-item detection
+  was written, found never to fire, and removed in v1.5.3 rather than left running
+  `getComputedStyle` on every mutation for no visible result. Don't rebuild it
+  unless the owner asks.
 
 `content.js` therefore tags the active row at runtime with `[data-br-active]` by
 *relative* structure (the row with one more class than its siblings; the submenu row
