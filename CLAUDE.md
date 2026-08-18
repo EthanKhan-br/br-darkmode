@@ -14,11 +14,16 @@ and the plan disagree, this file wins. Specific corrections are noted below.
 
 ## Hard rules
 
-**1. Never write a hashed MUI selector.** The portal is React + MUI with emotion
-class names (`css-1ab2c3`) that rehash on every portal deploy. Any rule built on one
-breaks silently later. Use structural hooks: `fieldset`, `[role="button"]`,
-`[aria-label]`, `[data-testid]`, or MUI's *stable* public classes (`MuiChip-root`,
-`MuiPaper-root`, `MuiButton-containedPrimary`) — those are API, not hashes.
+**1. Never write a generated class name.** The portal is **MUI v4 with react-jss**,
+not v5 with emotion — classes look like `jss37`, not `css-1ab2c3`. JSS numbers
+sequentially by *stylesheet registration order*, so adding or reordering any
+component anywhere earlier in the app renumbers them. That is strictly less stable
+than an emotion hash, which at least only changes when its own rule changes.
+Use structural hooks: `fieldset`, `[role="button"]`, `[aria-label]`,
+`[data-testid]`, `div.extra-class`, or MUI's *stable* public classes
+(`MuiChip-root`, `MuiPaper-root`, `MuiTypography-root`) — those are API.
+`tools/verify-fixes.js` fails the build if a `jss<n>` or `css-…` appears in
+`fixes.css` or `content.js`.
 
 **2. Every rule in `src/fixes.css` must start with `html:not([data-br-dark="off"])`.**
 The manifest injects this stylesheet unconditionally, so an unguarded rule keeps
@@ -98,6 +103,40 @@ colors from the site's own values.
   `filter: none` — nothing is wrongly inverted. The already-dark sidebar and stat
   cards were correctly left alone. The engine's core color work is good; everything
   in `fixes.css` is an edge case, not a systemic failure.
+
+---
+
+## Sidebar structure (inspected 2026-08-18 — don't re-derive)
+
+```
+div.jss36[.jss37]            <- row; the extra class carries the active background
+└─ div.jss35.extra-class     <- THE stable hook: author-written, 11 of them, sidebar-only
+   └─ p.MuiTypography-root.jss39[.jss41]   <- label; extra class carries the active color
+```
+
+- `ul > div[role="button"]` matches **only the 4 collapsible group headers**
+  (Web Submissions, Lead Manager, White Label Partners, Tax Service Orders). They
+  never take an active state. An early fix pass wasted three rounds targeting these
+  believing they were the nav rows — `:hover` appeared to work only because
+  `.MuiListItem-button` ships a default MUI hover.
+- The 11 real nav rows are `div.extra-class`'s **parent**.
+- Submenu children are `div[role="button"]` **not** directly inside a `ul`.
+- **No hrefs anywhere in the sidebar** — 0 of 11 rows have an `<a>` ancestor or
+  descendant. Navigation is `onClick` router pushes, so URL-matching is not an
+  option. Routes don't track labels either (Clients → `/client`, Processing and Fee
+  → `/formation-state`), so a hand-built label→route map would silently rot.
+- No `aria-current`, no data attributes, no inline styles, no pseudo-element
+  marker, no border or box-shadow difference. The extra class is the only signal.
+- **Submenu children have no class difference at all** — all identical. Their only
+  active signal is `background-color: rgba(10,10,10,0.04)`, roughly one RGB step.
+  MUI uses that same 4% for `:hover`, hence the `:hover` exclusion in
+  `tagActiveNav()`.
+
+`content.js` therefore tags the active row at runtime with `[data-br-active]` by
+*relative* structure (the row with one more class than its siblings; the submenu row
+with a painted background) and `fixes.css` styles that attribute. It clears the
+attribute before measuring, or its own styling would be read back as the signal and
+latch a stale row on permanently.
 
 ---
 

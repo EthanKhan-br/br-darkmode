@@ -59,6 +59,7 @@ html:not([data-br-dark="off"]) .MuiTooltip-tooltip {
    rgb(121,136,164) on rgb(33,36,46) = 4.33:1, just under AA, on ~15 elements per
    page. rgb(146,160,186) = 5.87:1. */
 html:not([data-br-dark="off"]) ul > div[role="button"] span,
+html:not([data-br-dark="off"]) div.extra-class > p,
 html:not([data-br-dark="off"]) p.title,
 html:not([data-br-dark="off"]) p.version-label {
   color: rgb(146, 160, 186) !important;
@@ -125,46 +126,23 @@ html:not([data-br-dark="off"]) ul > div[role="button"][aria-expanded="true"] p {
 }
 
 /* --- 8. Current page indicator ---------------------------------------------
-   The light-blue pill marking the page you're on inverted to a dark blue sitting
-   almost exactly on the sidebar color -- no visible current-page marker at all.
-   rgb(74,118,180) is 3.35:1 against the sidebar, the brightest pill that still
-   holds white text at AA (4.62:1). Going brighter trades the text away.
-   ponytail: the active marker's real class was never captured, so this is a union
-   -- exact classes, plus case-insensitive substring matches on "active"/"selected",
-   plus :has() for when the marker sits on a child. Scoped to the sidebar ul so the
-   substring matches can't stray. If the pill STILL doesn't show, get the real hook:
-     $$('ul > div[role=button]').map(e => [e.className, e.getAttribute('aria-current')])
-   and add it here -- never a hashed emotion class. */
-html:not([data-br-dark="off"]) ul > div[role="button"].Mui-selected,
-html:not([data-br-dark="off"]) ul > div[role="button"][aria-current],
-html:not([data-br-dark="off"]) ul > div[role="button"][class*="active" i],
-html:not([data-br-dark="off"]) ul > div[role="button"][class*="selected" i],
-html:not([data-br-dark="off"]) ul > div[role="button"]:has([class*="active" i]),
-html:not([data-br-dark="off"]) ul > div[role="button"]:has([aria-current]),
-html:not([data-br-dark="off"]) ul > a[aria-current] > div[role="button"],
-html:not([data-br-dark="off"]) ul > a[class*="active" i] > div[role="button"],
-html:not([data-br-dark="off"]) nav .Mui-selected {
+   The light-blue pill marking the current page inverted to rgb(34,38,48) -- one
+   step off the sidebar, invisible. Submenu children are worse: rgba(10,10,10,0.04),
+   about a single RGB step.
+   Neither is reachable from CSS. The portal is MUI v4 + react-jss and marks the
+   active row only with a generated class (jss37/jss41) that renumbers on any
+   deploy, and the rows are divs with no href, no aria-current and no data
+   attribute. content.js therefore finds the row by relative structure at runtime
+   and sets [data-br-active]; this styles that.
+   rgb(74,118,180) is 3.35:1 against the sidebar -- the brightest fill that still
+   holds white text at AA (4.62:1). Brighter trades the label away. */
+html:not([data-br-dark="off"]) [data-br-active] {
   background-color: rgb(74, 118, 180) !important;
   border-radius: 6px !important;
 }
-html:not([data-br-dark="off"]) ul > div[role="button"].Mui-selected span,
-html:not([data-br-dark="off"]) ul > div[role="button"][aria-current] span,
-html:not([data-br-dark="off"]) ul > div[role="button"][class*="active" i] span,
-html:not([data-br-dark="off"]) ul > div[role="button"][class*="selected" i] span,
-html:not([data-br-dark="off"]) ul > div[role="button"]:has([class*="active" i]) span,
-html:not([data-br-dark="off"]) ul > div[role="button"]:has([aria-current]) span,
-html:not([data-br-dark="off"]) ul > a[aria-current] > div[role="button"] span,
-html:not([data-br-dark="off"]) ul > a[class*="active" i] > div[role="button"] span,
-html:not([data-br-dark="off"]) nav .Mui-selected span,
-html:not([data-br-dark="off"]) ul > div[role="button"].Mui-selected p,
-html:not([data-br-dark="off"]) ul > div[role="button"][aria-current] p,
-html:not([data-br-dark="off"]) ul > div[role="button"][class*="active" i] p,
-html:not([data-br-dark="off"]) ul > div[role="button"][class*="selected" i] p,
-html:not([data-br-dark="off"]) ul > div[role="button"]:has([class*="active" i]) p,
-html:not([data-br-dark="off"]) ul > div[role="button"]:has([aria-current]) p,
-html:not([data-br-dark="off"]) ul > a[aria-current] > div[role="button"] p,
-html:not([data-br-dark="off"]) ul > a[class*="active" i] > div[role="button"] p,
-html:not([data-br-dark="off"]) nav .Mui-selected p {
+html:not([data-br-dark="off"]) [data-br-active] div.extra-class > p.MuiTypography-root,
+html:not([data-br-dark="off"]) [data-br-active] p,
+html:not([data-br-dark="off"]) [data-br-active] span {
   color: rgb(255, 255, 255) !important;
 }
 
