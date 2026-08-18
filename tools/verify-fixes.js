@@ -34,10 +34,11 @@ check('focus vs resting border', ratio([110, 175, 240], [107, 120, 150]), 1.8);
 check('sidebar nav text', ratio([146, 160, 186], SIDE), 4.5);
 check('primary button', ratio(FG, [26, 92, 134]), 4.5);
 check('worst chip @ 40% overlay', Math.min(...CHIPS.map((c) => ratio(FG, darken(c, 0.4)))), 4.5);
+check('logo navy on plaque', ratio([27, 47, 94], [238, 241, 245]), 4.5);
 
 console.log('--- values still present in fixes.css ---');
 for (const v of ['rgb(107, 120, 150)', 'rgb(110, 175, 240)', 'rgb(146, 160, 186)',
-                 'rgb(26, 92, 134)', 'rgba(0, 0, 0, 0.4)'])
+                 'rgb(26, 92, 134)', 'rgba(0, 0, 0, 0.4)', '#eef1f5'])
   line(css.includes(v), 'css value', v);
 
 // An unguarded rule keeps restyling the portal after the user picks Off -- the
