@@ -4,7 +4,7 @@ Dark mode Chrome extension (MV3, unpacked) for `https://portal.businessrocket.co
 and nothing else. Personal tool, not published to the Web Store.
 
 Repo: `https://github.com/EthanKhan-br/br-darkmode` (private) · owner `EthanKhan-br`
-Local: `c:\Users\PC\Downloads\br-darkmode` · current version **1.3.1**
+Local: `c:\Users\PC\Downloads\br-darkmode` · version lives in `manifest.json`
 
 The original brief is `businessrocketdarkplan.md`. **It is a historical document, not
 a spec** — several of its decisions were superseded during the build. Where this file
