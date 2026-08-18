@@ -3,17 +3,22 @@
    and verified by tools/verify-fixes.js -- not eyeballed. Re-run that script if
    you change any value.
 
+   EVERY rule below must be scoped by html:not([data-br-dark="off"]). This file is
+   injected by the manifest and applies whether the extension is on or off, so an
+   unguarded rule keeps restyling the portal after the user picks Off. content.js
+   sets that attribute on documentElement before it touches Dark Reader.
+   tools/verify-fixes.js asserts the guard is present on every rule.
+
    On selectors: `MuiChip-root`, `MuiPaper-root` etc. are MUI's STABLE public
-   class names, safe to target. The hashed emotion classes (`css-1ab2c3`) are the
-   ones that rehash on every deploy -- there are none in this file, keep it that way.
+   class names, safe to target. The hashed emotion classes are the ones that
+   rehash on every deploy -- there are none in this file, keep it that way.
 
    On !important: these rules fight both MUI's own stylesheet and Dark Reader's
    runtime overrides. Specificity alone loses that race unpredictably. */
 
 /* --- Flash-killer -----------------------------------------------------------
    At document_start no data-br-dark attribute exists yet, so this matches and the
-   page paints dark before first paint. content.js sets it to "off" once storage
-   resolves, reverting it.
+   page paints dark before first paint.
    Known ceiling: a brief DARK flash when the mode is Off. Storage reads are async,
    nothing beats first paint. Better than a white flash when On, the common case. */
 html:not([data-br-dark="off"]) {
@@ -23,28 +28,29 @@ html:not([data-br-dark="off"]) {
 /* --- 1. Form field borders --------------------------------------------------
    Was rgba(103,121,152,0.23), blending to 1.31:1 against the page. WCAG 1.4.11
    wants 3:1 for UI boundaries, so fields read as floating labels with no box.
-   rgb(107,120,150) = 3.67:1. Focus ring was 2.55:1, now 7.00:1 and clearly
-   distinct from the resting state. `fieldset` is unused elsewhere on the portal. */
-fieldset,
-.MuiOutlinedInput-notchedOutline {
+   rgb(107,120,150) = 3.67:1. Focus ring was 2.55:1, now 7.00:1 -- and 1.91:1
+   against the resting border, so it differs in lightness and not only in hue,
+   which matters for color-blind users. `fieldset` is unused elsewhere here. */
+html:not([data-br-dark="off"]) fieldset,
+html:not([data-br-dark="off"]) .MuiOutlinedInput-notchedOutline {
   border-color: rgb(107, 120, 150) !important;
 }
-.Mui-focused fieldset,
-.Mui-focused .MuiOutlinedInput-notchedOutline {
+html:not([data-br-dark="off"]) .Mui-focused fieldset,
+html:not([data-br-dark="off"]) .Mui-focused .MuiOutlinedInput-notchedOutline {
   border-color: rgb(110, 175, 240) !important;
 }
 
 /* --- 2. Portal-mounted overlay flash ----------------------------------------
    Menus, popovers and modals mount light and stay light for 1-3s until the
    engine's MutationObserver catches the new subtree -- a bright flash on every
-   filter interaction. This file is injected at document_start by the manifest, so
-   these rules apply the instant the node mounts, before the observer runs.
-   The values are the engine's own settled colors, so nothing shifts afterwards. */
-.MuiPopover-root .MuiPaper-root,
-.MuiModal-root .MuiPaper-root,
-.MuiMenu-root .MuiPaper-root,
-.MuiAutocomplete-popper .MuiPaper-root,
-.MuiTooltip-tooltip {
+   filter interaction. This file is injected at document_start, so these rules
+   apply the instant the node mounts, before the observer runs. The values are the
+   engine's own settled colors, so nothing shifts afterwards. */
+html:not([data-br-dark="off"]) .MuiPopover-root .MuiPaper-root,
+html:not([data-br-dark="off"]) .MuiModal-root .MuiPaper-root,
+html:not([data-br-dark="off"]) .MuiMenu-root .MuiPaper-root,
+html:not([data-br-dark="off"]) .MuiAutocomplete-popper .MuiPaper-root,
+html:not([data-br-dark="off"]) .MuiTooltip-tooltip {
   background-color: rgb(30, 32, 41) !important;
   color: rgb(214, 218, 225) !important;
 }
@@ -52,61 +58,60 @@ fieldset,
 /* --- 3. Sidebar navigation --------------------------------------------------
    rgb(121,136,164) on rgb(33,36,46) = 4.33:1, just under AA, on ~15 elements per
    page. rgb(146,160,186) = 5.87:1. */
-ul > div[role="button"] span,
-p.title,
-p.version-label {
+html:not([data-br-dark="off"]) ul > div[role="button"] span,
+html:not([data-br-dark="off"]) p.title,
+html:not([data-br-dark="off"]) p.version-label {
   color: rgb(146, 160, 186) !important;
 }
 
-/* --- 4. Logo ----------------------------------------------------------------
-   External SVG file: the engine can't recolor pixels inside it, so the navy
-   "BUSINESS" wordmark sits nearly invisible on the near-black sidebar. The orange
-   script half is already fine. img[alt="rocky-icon"] is white already -- leave it. */
-img[alt="logo"] {
-  filter: brightness(1.9);
-}
+/* --- 4. Logo ---- REMOVED, see "Still open" ---------------------------------
+   filter: brightness(1.9) lightened the navy wordmark but clipped the orange
+   script's red channel at 255, turning "Rocket.com" yellow. Any brightness above
+   ~1.08 clips it. CSS filters can't raise lightness without touching hue, so
+   there is no drop-in replacement -- the logo is left alone for now. */
 
 /* --- 5. Primary buttons -----------------------------------------------------
    Blue fills kept their lightness while labels went light. rgb(34,110,158) was
    3.95:1; the Companies button's lighter rgb(60,159,223) was 2.07:1, the worst
    number on the site. One shared darker blue: 5.13:1. */
-.MuiButton-containedPrimary,
-button[data-testid="create-new-company-button"],
-button[data-testid="SUBMIT_FORM_BUTTON"] {
+html:not([data-br-dark="off"]) .MuiButton-containedPrimary,
+html:not([data-br-dark="off"]) button[data-testid="create-new-company-button"],
+html:not([data-br-dark="off"]) button[data-testid="SUBMIT_FORM_BUTTON"] {
   background-color: rgb(26, 92, 134) !important;
   color: rgb(214, 218, 225) !important;
 }
 
 /* --- 6. Status chips --------------------------------------------------------
-   Six chip colors failed between 2.50:1 and 3.98:1 -- olive, two greens, dark red,
-   blue. Per-color patches would need six rules and would miss the next status
-   value someone adds, so this darkens whatever fill the chip has and forces a
-   light label. Worst case after treatment is 4.90:1.
-   ponytail: inset box-shadow is the trick that darkens the fill without touching
-   the text, which a filter would dim too. It clobbers any real box-shadow on a
-   chip -- none today. If chips ever get elevation, switch to a ::before overlay. */
-.MuiChip-root,
-div.paid-chip {
+   Six chip colors failed between 2.50:1 and 3.98:1. Per-color patches would need
+   six rules and would miss the next status value someone adds, so this darkens
+   whatever fill the chip has and forces a light label. Worst case now 4.90:1.
+   ponytail: inset box-shadow darkens the fill without touching the text, which a
+   filter would dim too. It clobbers any real box-shadow on a chip -- none today.
+   If chips ever get elevation, switch to a ::before overlay. */
+html:not([data-br-dark="off"]) .MuiChip-root,
+html:not([data-br-dark="off"]) div.paid-chip {
   box-shadow: inset 0 0 0 999px rgba(0, 0, 0, 0.4) !important;
   color: rgb(214, 218, 225) !important;
 }
-.MuiChip-root .MuiChip-label,
-.MuiChip-root .MuiChip-icon,
-.MuiChip-root .MuiChip-deleteIcon {
+html:not([data-br-dark="off"]) .MuiChip-root .MuiChip-label,
+html:not([data-br-dark="off"]) .MuiChip-root .MuiChip-icon,
+html:not([data-br-dark="off"]) .MuiChip-root .MuiChip-deleteIcon {
   color: inherit !important;
 }
 
 /* --- Still open -------------------------------------------------------------
+   [ ] Logo. The navy "BUSINESS" wordmark is low-contrast on the near-black
+       sidebar, but it's an external SVG the engine can't recolor and brightness
+       filters shift the orange half's hue. Options: leave as-is (logos are exempt
+       from WCAG contrast), put a light plaque behind it, or ship a white-knockout
+       SVG. Awaiting a call.
    [ ] react-select menus -- the QA walk opened one but its portal markup wasn't
        captured. If those still flash light, add their container to rule 2.
-   [ ] Notes category chips (Company / Client / Order / Tax Order / Calls / Sales
-       Rep) all pass AA but converged to muddy brown-olive, so they no longer
-       distinguish at a glance. Cosmetic; needs hand-assigned hues if you scan by
-       color. Rule 6 darkens them further -- check they still read.
+   [ ] Notes category chips all pass AA but converged to muddy brown-olive, so
+       they no longer distinguish at a glance. Rule 6 darkens them further.
 
    Closed by the QA walk, do not re-investigate:
    - Iframes: all 3 are Stripe telemetry, 1519x1 and 0x0. No chat widget exists.
    - Shadow root: belongs to Grammarly's extension, not the portal.
-   - Unthemed light surfaces: zero found. Avatars and logos correctly untouched;
-     already-dark sidebar and stat cards correctly left alone.
+   - Unthemed light surfaces: zero found. Avatars and logos correctly untouched.
    - TinyMCE renders fully light (cross-origin skin). Accepted, won't fix. */
