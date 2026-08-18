@@ -158,6 +158,11 @@ The repo has no committed identity.
 
 ## Open items
 
+- **Sidebar active-page marker.** Rule 8 in `fixes.css` is a *union of guesses* at
+  the class the portal uses (`Mui-selected` / `aria-current` / `.active` / `.selected`).
+  If the current-page pill still does not show, find the real marker with
+  `$('ul > div[role=button]').find(e => e.className || e.getAttribute('aria-current'))`
+  and add it. Never a hashed emotion class.
 - **react-select menus.** The QA walk opened one but didn't capture its portal markup.
   If those still flash light on mount, add their container to rule 2 in `fixes.css`.
 - **Notes category chips** (Company / Client / Order / Tax Order / Calls / Sales Rep)

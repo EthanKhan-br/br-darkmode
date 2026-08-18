@@ -34,10 +34,17 @@ check('focus vs resting border', ratio([110, 175, 240], [107, 120, 150]), 1.8);
 check('sidebar nav text', ratio([146, 160, 186], SIDE), 4.5);
 check('primary button', ratio(FG, [26, 92, 134]), 4.5);
 check('worst chip @ 40% overlay', Math.min(...CHIPS.map((c) => ratio(FG, darken(c, 0.4)))), 4.5);
+// State indicators: WCAG 1.4.11 wants 3:1 for a boundary, but a selection fill is
+// carried by text too, so these target 'unmistakable' rather than a fixed floor.
+check('active pill vs sidebar', ratio([52, 86, 133], SIDE), 1.9);
+check('active pill text', ratio([226, 232, 240], [52, 86, 133]), 4.5);
+check('hover row vs sidebar', ratio([50, 56, 72], SIDE), 1.25);
+check('hover row text', ratio([178, 190, 212], [50, 56, 72]), 4.5);
 
 console.log('--- values still present in fixes.css ---');
 for (const v of ['rgb(107, 120, 150)', 'rgb(110, 175, 240)', 'rgb(146, 160, 186)',
-                 'rgb(26, 92, 134)', 'rgba(0, 0, 0, 0.4)'])
+                 'rgb(26, 92, 134)', 'rgba(0, 0, 0, 0.4)',
+                 'rgb(52, 86, 133)', 'rgb(226, 232, 240)', 'rgb(50, 56, 72)', 'rgb(178, 190, 212)'])
   line(css.includes(v), 'css value', v);
 
 // An unguarded rule keeps restyling the portal after the user picks Off -- the

@@ -105,6 +105,51 @@ html:not([data-br-dark="off"]) .MuiChip-root .MuiChip-deleteIcon {
   color: inherit !important;
 }
 
+/* --- 7. Sidebar hover + open-dropdown state --------------------------------
+   In light mode a hovered or expanded dropdown parent (Web Submissions, Lead
+   Manager, White Label Partners, Tax Service Orders) picks up a pale grey
+   highlight. Pale grey inverts to a near-sidebar dark, so the state all but
+   vanished. rgb(50,56,72) is 1.32:1 against the sidebar -- felt, not loud -- and
+   the text lifts to rgb(178,190,212) so the state reads on two channels.
+   [aria-expanded] is the structural marker for an open dropdown; :hover needs no
+   guessing at all. */
+html:not([data-br-dark="off"]) ul > div[role="button"]:hover,
+html:not([data-br-dark="off"]) ul > div[role="button"][aria-expanded="true"] {
+  background-color: rgb(50, 56, 72) !important;
+}
+html:not([data-br-dark="off"]) ul > div[role="button"]:hover span,
+html:not([data-br-dark="off"]) ul > div[role="button"][aria-expanded="true"] span,
+html:not([data-br-dark="off"]) ul > div[role="button"]:hover p,
+html:not([data-br-dark="off"]) ul > div[role="button"][aria-expanded="true"] p {
+  color: rgb(178, 190, 212) !important;
+}
+
+/* --- 8. Current page indicator ---------------------------------------------
+   The light-blue pill marking the page you're on inverted to a dark blue sitting
+   almost exactly on the sidebar color -- no visible current-page marker at all.
+   rgb(52,86,133) is 2.08:1 against the sidebar with white text at 6.05:1.
+   ponytail: the active marker's real class was never captured, so this is a union
+   of the standard ones (Mui-selected / aria-current / .active / .selected). If the
+   pill still doesn't show, find the real one with:
+     $$('ul > div[role=button]').find(e => e.className || e.getAttribute('aria-current'))
+   and add it here -- do NOT reach for a hashed emotion class. */
+html:not([data-br-dark="off"]) ul > div[role="button"].Mui-selected,
+html:not([data-br-dark="off"]) ul > div[role="button"][aria-current],
+html:not([data-br-dark="off"]) ul > div[role="button"].active,
+html:not([data-br-dark="off"]) ul > div[role="button"].selected,
+html:not([data-br-dark="off"]) ul > a[aria-current] > div[role="button"],
+html:not([data-br-dark="off"]) nav .Mui-selected {
+  background-color: rgb(52, 86, 133) !important;
+}
+html:not([data-br-dark="off"]) ul > div[role="button"].Mui-selected span,
+html:not([data-br-dark="off"]) ul > div[role="button"][aria-current] span,
+html:not([data-br-dark="off"]) ul > div[role="button"].active span,
+html:not([data-br-dark="off"]) ul > div[role="button"].selected span,
+html:not([data-br-dark="off"]) ul > a[aria-current] > div[role="button"] span,
+html:not([data-br-dark="off"]) nav .Mui-selected span {
+  color: rgb(226, 232, 240) !important;
+}
+
 /* --- Still open -------------------------------------------------------------
    [ ] react-select menus -- the QA walk opened one but its portal markup wasn't
        captured. If those still flash light, add their container to rule 2.
