@@ -42,6 +42,21 @@ check('focus ring', ratio([110, 175, 240], PAGE), 3);
 check('focus vs resting border', ratio([110, 175, 240], [107, 120, 150]), 1.8);
 check('sidebar nav text', ratio([146, 160, 186], SIDE), 4.5);
 check('primary button', ratio(FG, [26, 92, 134]), 4.5);
+// A hover that lightens would drop the label under AA -- the fill closes on a light
+// label as it rises. Darkening opens the gap and still reads as a state change.
+const BTN = [26, 92, 134], BTN_H = [18, 66, 96], ALT = [30, 94, 91], ALT_H = [20, 64, 62];
+check('button hover label', ratio(FG, BTN_H), 4.5);
+check('button hover is felt', ratio(BTN, BTN_H), 1.25);
+check('alt button label', ratio([226, 232, 240], ALT), 4.5);
+check('alt button vs page', ratio(ALT, PAGE), 1.5);
+check('alt button hover label', ratio(FG, ALT_H), 4.5);
+check('alt button hover is felt', ratio(ALT, ALT_H), 1.25);
+// The alt button separates from the primary by HUE ONLY -- equal lightness, blue
+// against blue-green. That was the owner's call (2026-08-20) over a violet that also
+// separated on lightness, so there is deliberately NO lightness check here: adding one
+// back would fail a choice that was made on purpose. 30 rgb is the same bar the
+// category tags are held to, and it is the real constraint that remains.
+line(dist(ALT, BTN) >= 30, 'alt button vs primary', dist(ALT, BTN).toFixed(0) + ' rgb apart (need 30)');
 check('worst chip @ 40%', Math.min(...CHIPS.map((c) => ratio(FG, darken(c, 0.4)))), 4.5);
 // State indicators: a selection fill is carried by its label too, so these target
 // "unmistakable" rather than the 3:1 a bare boundary would need.
@@ -110,6 +125,48 @@ check('alert text on teal', ratio([226, 232, 240], [19, 57, 55]), 4.5);
 check('alert icon on teal', ratio([50, 205, 180], [19, 57, 55]), 3);
 line(dist([124, 140, 235], [50, 205, 180]) >= 100, 'note accents differ', dist([124, 140, 235], [50, 205, 180]).toFixed(0) + ' rgb apart (need 100)');
 
+// The section rule is decoration, not text or a UI boundary: the bar has to keep the
+// presence the rust had, or the layout loses a separator it was designed around.
+check('section rule vs page', ratio([26, 92, 134], PAGE), 1.8);
+
+// Rule 18. The two row tints are a CONVERGENCE check, not a contrast one: the engine
+// landed them 5 rgb apart, which no contrast ratio would have flagged. Both stay as
+// quiet as the task hover -- they are full-width bands.
+const ROW_VIOLET = [60, 40, 78], ROW_BLUE = [26, 54, 82];
+check('row tint violet vs row', ratio(ROW_VIOLET, TABLE), 1.1);
+check('row tint blue vs row', ratio(ROW_BLUE, TABLE), 1.1);
+check('row tint violet text', ratio(FG, ROW_VIOLET), 4.5);
+check('row tint blue text', ratio(FG, ROW_BLUE), 4.5);
+line(dist(ROW_VIOLET, ROW_BLUE) >= 30, 'row tints stay distinct',
+     dist(ROW_VIOLET, ROW_BLUE).toFixed(0) + ' rgb apart (need 30)');
+check('status banner text', ratio([226, 232, 240], [38, 89, 59]), 4.5);
+check('status banner vs page', ratio([38, 89, 59], PAGE), 1.5);
+check('info panel vs page', ratio([34, 46, 68], PAGE), 1.15);
+check('info panel text', ratio([226, 232, 240], [34, 46, 68]), 4.5);
+// Same pale blue, scoped to a table cell, is a status box rather than a panel: it has
+// to read as a box, so it is held to the presence the rule 16 stage boxes have.
+check('status box vs page', ratio([27, 60, 97], PAGE), 1.4);
+check('status box label', ratio([226, 232, 240], [27, 60, 97]), 4.5);
+check('green banner on panel', ratio([38, 89, 59], [34, 46, 68]), 1.5);
+
+// Rule 19. A badge is a UI marker before it is text -- the dot variant has no label at
+// all, so it needs 3:1 against the page as a boundary as well as 4.5 under a count.
+check('badge vs page', ratio([211, 47, 47], PAGE), 3);
+check('badge count label', ratio(WHITE, [211, 47, 47]), 4.5);
+check('secondary chip label', ratio([226, 232, 240], [26, 92, 134]), 4.5);
+
+// Rule 20. MUI's own selected marker is rgba(10,10,10,0.12) -- about one RGB step on a
+// dark page. The gap between the two LABELS is what has to carry the state, so it is
+// checked the same way the sidebar active row is.
+check('toggle selected tint vs page', ratio([37, 48, 66], PAGE), 1.15);
+check('toggle selected label', ratio([226, 232, 240], [37, 48, 66]), 4.5);
+check('toggle unselected label', ratio([146, 160, 186], PAGE), 4.5);
+check('toggle selected vs unselected', ratio([226, 232, 240], [146, 160, 186]), 1.8);
+
+// Rule 21. The engine left this at 4.01 -- under AA, but only just, which is why it
+// went unnoticed for so long.
+check('muted secondary text', ratio([146, 160, 186], TABLE), 4.5);
+
 console.log('--- values still in fixes.css ---');
 for (const v of ['rgb(107, 120, 150)', 'rgb(110, 175, 240)', 'rgb(146, 160, 186)',
                  'rgb(26, 92, 134)', 'rgba(0, 0, 0, 0.4)', 'rgb(37, 48, 66)', 'rgb(226, 232, 240)',
@@ -117,7 +174,9 @@ for (const v of ['rgb(107, 120, 150)', 'rgb(110, 175, 240)', 'rgb(146, 160, 186)
                  'rgb(44, 50, 64)', 'rgb(211, 47, 47)', 'rgb(255, 145, 138)', 'rgb(255, 255, 255)',
                  'rgb(41, 44, 56)',
                  'rgb(44, 44, 68)', 'rgb(124, 140, 235)', 'rgb(19, 57, 55)', 'rgb(50, 205, 180)', 'rgb(103, 32, 30)', 'rgb(255, 107, 107)', 'rgb(255, 236, 234)',
-                 'rgb(27, 60, 97)', 'rgb(30, 94, 91)', 'rgb(73, 41, 97)', 'rgb(53, 60, 77)', 'rgb(105, 31, 94)', 'rgb(103, 28, 53)', 'rgb(38, 89, 59)'])
+                 'rgb(27, 60, 97)', 'rgb(30, 94, 91)', 'rgb(73, 41, 97)', 'rgb(53, 60, 77)', 'rgb(105, 31, 94)', 'rgb(103, 28, 53)', 'rgb(38, 89, 59)',
+                 'rgb(60, 40, 78)', 'rgb(26, 54, 82)', 'rgb(34, 46, 68)',
+                 'rgb(18, 66, 96)', 'rgb(20, 64, 62)'])
   line(css.includes(v), 'css value', v);
 
 // An unguarded rule keeps restyling the portal after the user picks Off -- the bug

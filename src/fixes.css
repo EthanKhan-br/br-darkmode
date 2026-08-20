@@ -80,12 +80,41 @@ html:not([data-br-dark="off"]) p.version-label {
 /* --- 5. Primary buttons -----------------------------------------------------
    Blue fills kept their lightness while labels went light. rgb(34,110,158) was
    3.95:1; the Companies button's lighter rgb(60,159,223) was 2.07:1, the worst
-   number on the site. One shared darker blue: 5.13:1. */
-html:not([data-br-dark="off"]) .MuiButton-containedPrimary,
-html:not([data-br-dark="off"]) button[data-testid="create-new-company-button"],
-html:not([data-br-dark="off"]) button[data-testid="SUBMIT_FORM_BUTTON"] {
+   number on the site. One shared darker blue: 5.13:1.
+   WIDENED 2026-08-20 from .MuiButton-containedPrimary to .MuiButton-contained. Only
+   the primary variant was covered, so every OTHER contained button on the portal was
+   still sitting on raw engine output -- rgb(34,110,158) at 3.98:1 on ten buttons on
+   /company-order/<id> and nine on /tax-orders/<id>, and a green rgb(40,133,61) at
+   3.35:1 on three more. containedPrimary carries .MuiButton-contained too, so the
+   wider class is a superset and nothing loses the fix.
+   This DOES flatten any button the site coloured on purpose, which cost a round: the
+   owner saw all four buttons in a row go identical and asked for the distinction back.
+   Rule 22 is the exemption -- it repaints the ones the site declared differently, found
+   at runtime rather than guessed. Anything similar should extend rule 22, not carve a
+   hole in this one.
+   Disabled buttons are excluded. Pinning the fill with !important overrode MUI's own
+   greying, so a disabled button rendered as a solid, inviting blue -- three of them on
+   /company-order/<id> alone (Generate PDF, Upload PDF, Send). :not(.Mui-disabled) hands
+   those back to the engine, which greys them correctly. That bug predates the widening;
+   it was just far less visible when this rule only covered the primary variant. */
+html:not([data-br-dark="off"]) .MuiButton-contained:not(.Mui-disabled),
+html:not([data-br-dark="off"]) button[data-testid="create-new-company-button"]:not(.Mui-disabled),
+html:not([data-br-dark="off"]) button[data-testid="SUBMIT_FORM_BUTTON"]:not(.Mui-disabled) {
   background-color: rgb(26, 92, 134) !important;
   color: rgb(214, 218, 225) !important;
+}
+/* Pinning the fill with !important also killed the site's own hover colour, so every
+   contained button lost its hover response -- 19 of them once this rule was widened.
+   The hover DARKENS rather than lightens. The site lightens (rgb(36,121,175)), but
+   at this fill a lighter hover drops the label to 3.38:1, under AA: the label is
+   already light, so raising the fill closes the gap. Darkening opens it -- 5.13 to
+   7.59 -- and still reads as a 1.48 step, well past the ~1.25 where a state change
+   stops being felt. Same reasoning as rule 8's active tint: on a dark UI the honest
+   direction for a state change is usually down, not up. */
+html:not([data-br-dark="off"]) .MuiButton-contained:not(.Mui-disabled):hover,
+html:not([data-br-dark="off"]) button[data-testid="create-new-company-button"]:not(.Mui-disabled):hover,
+html:not([data-br-dark="off"]) button[data-testid="SUBMIT_FORM_BUTTON"]:not(.Mui-disabled):hover {
+  background-color: rgb(18, 66, 96) !important;
 }
 
 /* --- 6. Status chips --------------------------------------------------------
@@ -216,8 +245,19 @@ html:not([data-br-dark="off"]) tr[data-testid^="task-"] .MuiChip-root {
    The fills are only 31 rgb apart by design; the accents are 109 apart and carry the
    distinction. That is also a second axis away from the original amber/green, which was
    a red-green pairing and failed for colour blind readers.
-   The base rule keeps a neutral fill so a category the site adds later still renders as
-   a card instead of inheriting whatever the engine settles on.
+   The slate-indigo is the BASE, not a mapped category. It started as a mapping on
+   rgb(255 (order notes) with a neutral fallback, and that was wrong: note cards are
+   coloured by CATEGORY, and there are seven of them -- company rgb(254,221,174), client
+   rgb(253,255,221), order rgb(255,203,128), general rgb(221,238,255), taxorder
+   rgba(184,185,229,0.73), calls rgb(254,199,180), sales_rep rgb(200,247,197). Only one
+   of those was mapped, so every other category fell to the neutral fallback and read as
+   a different, greyer card. The owner hit this on /tax-orders/<id>, where all 23 notes
+   are taxorder-lavender.
+   Category is already carried by the filter chips above the list (rule 13) and by the
+   note's own header text, so the cards do not need to repeat it. Default is the slate-
+   indigo; the ONLY exception is the status-change note, which is a different KIND of
+   thing rather than a different category -- system-written, not a person's note.
+   That also means a category the portal adds later renders correctly with no change.
    The hook is an attribute-substring match on the inline style -- deliberately on the
    comma-free "rgb(255" / "rgb(175" prefix, both because it survives the site nudging
    its palette and because verify-fixes.js splits selectors on commas. It is the category
@@ -226,13 +266,9 @@ html:not([data-br-dark="off"]) tr[data-testid^="task-"] .MuiChip-root {
    Dark Reader wins over the inline attribute with its own !important rule, not by
    rewriting the attribute -- which is why matching on [style*=] still works. */
 html:not([data-br-dark="off"]) [data-testid="note-row"] {
-  background-color: rgb(41, 44, 56) !important;
-  border-left: 4px solid rgb(107, 120, 150) !important;
-  border-radius: 4px !important;
-}
-html:not([data-br-dark="off"]) [data-testid="note-row"][style*="rgb(255"] {
   background-color: rgb(44, 44, 68) !important;
-  border-left-color: rgb(124, 140, 235) !important;
+  border-left: 4px solid rgb(124, 140, 235) !important;
+  border-radius: 4px !important;
 }
 html:not([data-br-dark="off"]) [data-testid="note-row"][style*="rgb(175"] {
   background-color: rgb(19, 57, 55) !important;
@@ -420,6 +456,10 @@ html:not([data-br-dark="off"]) .MuiChip-root[style*="background-color"][style*="
 html:not([data-br-dark="off"]) .MuiChip-root[style*="background-color"][style*="rgb(232, 120, 120)"] {
   background-color: rgb(53, 60, 77) !important;
 }
+/* CUSTOM EMAIL -- teal against GENERIC EMAIL's slate; they are a pair */
+html:not([data-br-dark="off"]) .MuiChip-root[style*="background-color"][style*="rgb(90, 254, 1)"] {
+  background-color: rgb(30, 94, 91) !important;
+}
 /* United States */
 html:not([data-br-dark="off"]) .MuiChip-root[style*="background-color"][style*="rgb(125, 181, 111)"] {
   background-color: rgb(38, 89, 59) !important;
@@ -527,6 +567,23 @@ html:not([data-br-dark="off"]) .MuiChip-root[style*="background-color"][style*="
 /* ZERO ACTIVITY */
 html:not([data-br-dark="off"]) .MuiChip-root[style*="background-color"][style*="rgb(41, 255, 212)"] {
   background-color: rgb(30, 94, 91) !important;
+}
+
+/* NON-RESIDENT OWNERS -- crimson, the deliberate opposite of US RESIDENT's teal.
+   These two must never be misread for each other, the same reason PAID/UNPAID split
+   green/crimson above. The site itself reds NON-RESIDENT OWNERSHIP, so it already
+   treats this as a flag. */
+html:not([data-br-dark="off"]) .MuiChip-root[style*="background-color"][style*="rgb(159, 140, 212)"] {
+  background-color: rgb(103, 28, 53) !important;
+}
+/* NON-RESIDENT OWNERSHIP -- same concept, same colour */
+html:not([data-br-dark="off"]) .MuiChip-root[style*="background-color"][style*="rgb(255, 31, 31)"] {
+  background-color: rgb(103, 28, 53) !important;
+}
+/* P15 - General Products -- blue, sharing the lane with S03 - Professional Services.
+   Product codes are one family and read as one. */
+html:not([data-br-dark="off"]) .MuiChip-root[style*="background-color"][style*="rgb(171, 71, 188)"] {
+  background-color: rgb(27, 60, 97) !important;
 }
 
 /* --- 15. Warning / error alerts ---------------------------------------------
@@ -665,6 +722,206 @@ html:not([data-br-dark="off"]) tbody td div[style*="background: rgb"][style*="rg
 }
 html:not([data-br-dark="off"]) tbody td div[style*="background: rgb"][style*="rgb(252, 65, 55)"] {
   background: rgb(103, 28, 53) !important;
+}
+
+
+/* --- 17. Section rules (the orange bars above tables) ------------------------
+   The thick bar above most tables. It is TWO components painted the same colour:
+   an hr.MuiDivider-root, and a MUI LinearProgress the site uses as a static rule
+   (determinate, value 100, so it never animates -- it is decoration, not loading).
+   The engine renders the brand orange as rgb(152,53,19), a dark rust that reads as
+   a warning band across the top of every table.
+   Replaced with the portal's OWN primary blue rgb(26,92,134), already in this file
+   as the button fill in rule 5 -- no new value, and the bars now tie to the buttons
+   instead of fighting them. The rust sits at 2.21 against the page and this at 2.13,
+   so the bar keeps the same presence in the layout; only the hue changes. Muting it
+   further was rejected: the bar is a deliberate section separator, and a barely
+   visible one would be a different design decision, not a colour fix.
+   ponytail: .MuiDivider-root is unscoped, so the one ordinary 1px divider on the page
+   turns from rgba(10,10,10,0.12) to a faint blue hairline. Those two dividers are
+   distinguished only by height, which CSS cannot match on, and a 1px line at either
+   colour is near invisible on this background. If a real bordered divider ever needs
+   its own colour, scope this by an ancestor then. */
+html:not([data-br-dark="off"]) .MuiDivider-root,
+html:not([data-br-dark="off"]) .MuiLinearProgress-barColorPrimary {
+  background-color: rgb(26, 92, 134) !important;
+}
+html:not([data-br-dark="off"]) .MuiLinearProgress-colorPrimary {
+  background-color: rgb(41, 44, 56) !important;
+}
+
+/* --- 18. Inline-coloured status surfaces ------------------------------------
+   Three more places the site paints a pale fill inline and the engine flattens it
+   until the distinction is gone. Same family as rules 11/14/16, different elements,
+   so they need their own hooks -- rule 14 matches .MuiChip-root and rule 16 matches
+   the `background:` shorthand inside a table cell; none of these are either.
+
+   The two table-row tints are the important one, and they are a CONVERGENCE failure,
+   not a contrast one -- which is why they never showed up in a contrast audit. The
+   site tints rows lavender rgb(203,195,227) and pale blue rgb(195,220,237); the engine
+   lands them on rgb(48,53,70) and rgb(46,51,66), FIVE rgb apart. Two different row
+   states rendering as the same grey is the notes-panel bug again in a new place.
+   Replaced with a violet and a blue 37 rgb apart, both held at 1.14 and 1.20 against
+   the untinted row -- deliberately as quiet as rule 9's hover, because these are
+   full-width bands and a row tint that shouts makes the table unreadable. The
+   separation is carried by hue, not by lightness, which is the whole point.
+
+   The green box is the order's status banner ("Submitted to Government Agency"),
+   rgb(1,167,4) inline, engine output rgb(11,133,13) at 3.42:1 -- the worst number
+   found on either page. It takes the palette green from rule 13, the same value the
+   settled/positive labels use in rule 14, at 6.62:1.
+   The pale blue panel rgb(189,213,255) flattens to rgb(43,48,63), one step off the
+   page; rgb(34,46,68) puts it back at 1.19 -- present as a panel, quiet as content. */
+html:not([data-br-dark="off"]) div[style*="rgb(1, 167, 4)"] {
+  background-color: rgb(38, 89, 59) !important;
+  color: rgb(226, 232, 240) !important;
+}
+html:not([data-br-dark="off"]) tr[style*="rgb(203, 195, 227)"] {
+  background: rgb(60, 40, 78) !important;
+}
+html:not([data-br-dark="off"]) tr[style*="rgb(195, 220, 237)"] {
+  background: rgb(26, 54, 82) !important;
+}
+html:not([data-br-dark="off"]) div[style*="rgb(189, 213, 255)"] {
+  background-color: rgb(34, 46, 68) !important;
+}
+/* The same pale blue does TWO jobs on /company-order/<id>: it fills the four header
+   form fields (Order Status, Order Type, Payment Status, Bank Type), where a quiet
+   panel is right, and it fills a status box inside a table cell, where a quiet panel
+   reads as nothing at all. Scoped to the cell the way rule 16 is, it gets the palette
+   blue instead -- 1.44 against the page, the same presence the stage boxes have.
+   Blue and not green deliberately: this is the site's own blue, and mapping it to a
+   meaning on the strength of one observed value is how rule 14's grey fallback keeps
+   biting. Blue asserts nothing beyond what the site already said. */
+html:not([data-br-dark="off"]) tbody td div[style*="rgb(189, 213, 255)"] {
+  background-color: rgb(27, 60, 97) !important;
+  color: rgb(226, 232, 240) !important;
+}
+
+
+/* --- 19. Secondary-themed badges, chips and the tab indicator ----------------
+   MUI's `secondary` palette entry on this portal is the brand orange, so every
+   component that asks for it inherits the rust the engine makes of orange -- the same
+   rust rule 17 took off the section bars. Three components do:
+     .MuiBadge-colorSecondary   rgb(143,61,31)   the dot on a tab
+     .MuiChip-colorSecondary    rgb(143,61,31)   the badge beside the order title
+     .MuiBadge-colorError       rgb(166,29,18)   a count badge
+   These are coloured by CLASS, not by an inline style, which is exactly why rule 14
+   never saw them: its [style*="background-color"] hook is what separates the inline-
+   coloured tags from everything else, and these carry no style attribute at all.
+
+   Badges are attention markers, so both severities take rule 10's rgb(211,47,47) --
+   already in this file, 4.98:1 under white and 3.26 against the page, so a count stays
+   legible and a 6px dot stays visible. Secondary and error landing on the same red is
+   intended: on this portal both mean "there is something here", and inventing a second
+   alert colour to distinguish two things that never appear together is noise.
+   colorPrimary badges are deliberately NOT touched -- those are already blue.
+
+   The chip takes rule 5's button blue, and needs box-shadow:none for the same reason
+   rule 10's chip does: rule 6 paints 40% black over every .MuiChip-root. It also
+   carries an inline color:#fff that the engine rewrote; ours is user-origin, so it
+   wins regardless.
+   The tab indicator is decoration with no text, so it was never a contrast failure --
+   it is here only because it was sitting on rgb(34,110,158), the raw engine blue rule
+   5 replaces, and one stray shade of blue under the tabs reads as a mistake. */
+html:not([data-br-dark="off"]) .MuiBadge-colorSecondary,
+html:not([data-br-dark="off"]) .MuiBadge-colorError {
+  background-color: rgb(211, 47, 47) !important;
+  color: rgb(255, 255, 255) !important;
+}
+html:not([data-br-dark="off"]) .MuiChip-root.MuiChip-colorSecondary {
+  background-color: rgb(26, 92, 134) !important;
+  box-shadow: none !important;
+  color: rgb(226, 232, 240) !important;
+}
+html:not([data-br-dark="off"]) .MuiTabs-indicator {
+  background-color: rgb(26, 92, 134) !important;
+}
+
+
+/* --- 20. Toggle button groups -----------------------------------------------
+   The segmented filter above the tax order list. Both states were unreadable and, worse,
+   identical: MUI marks the selected one with background rgba(10,10,10,0.12), which over
+   a dark page is roughly one RGB step -- the same invisible-marker trap as the sidebar
+   sub-items in rule 8. Its label sat at rgba(215,219,225,0.54) against the unselected
+   0.38, and the inner <p> overrode both with rgb(118,133,161) at 4.16:1, under AA at
+   12px.
+   So the selected state is given rule 8's active tint rgb(37,48,66) -- 1.22 against the
+   page, and already the portal's established "this one is current" value -- and the two
+   labels are split 6.15:1 unselected against 10.78:1 selected, so the state reads on
+   lightness as well as on fill.
+   The inner <p> sets its own colour rather than inheriting, which is why the descendant
+   is listed and not just the root. */
+html:not([data-br-dark="off"]) .MuiToggleButton-root,
+html:not([data-br-dark="off"]) .MuiToggleButton-root p,
+html:not([data-br-dark="off"]) .MuiToggleButton-root span {
+  color: rgb(146, 160, 186) !important;
+}
+html:not([data-br-dark="off"]) .MuiToggleButton-root.Mui-selected {
+  background-color: rgb(37, 48, 66) !important;
+}
+html:not([data-br-dark="off"]) .MuiToggleButton-root.Mui-selected,
+html:not([data-br-dark="off"]) .MuiToggleButton-root.Mui-selected p,
+html:not([data-br-dark="off"]) .MuiToggleButton-root.Mui-selected span {
+  color: rgb(226, 232, 240) !important;
+}
+
+
+/* --- 21. Muted secondary text -----------------------------------------------
+   The portal's muted grey comes out of the engine as rgb(118,133,161), which lands
+   between 4.01:1 and 4.36:1 on the page -- under AA everywhere it appears, but only
+   just. rgb(146,160,186) is already in this file (rule 3) and takes it to 5.66:1.
+   ponytail: only the two occurrences with an AUTHOR-WRITTEN hook are fixed --
+   `p.text` inside the email panel and the `p` inside .inline-icon. Deliberately NOT
+   blanket-applied to `p` or `i`: this file pins text colour in rules 8, 10, 11, 12,
+   13, 15 and 20, and a global paragraph colour would be a rule that quietly fights all
+   of them. Two occurrences were left at engine output for want of a safe hook -- a bare
+   <i> in a MuiGrid cell, and a react-select placeholder whose only class is an emotion
+   hash (hard rule 1 forbids matching it, and a dim placeholder is correct anyway).
+   Both are above 4:1 and neither is body copy. Revisit if the portal ever gives them a
+   class of their own. */
+html:not([data-br-dark="off"]) p.text,
+html:not([data-br-dark="off"]) .inline-icon p {
+  color: rgb(146, 160, 186) !important;
+}
+
+
+/* --- 22. Buttons the site deliberately coloured differently -------------------
+   Rule 5 fixed a real AA failure by giving every contained button one blue, and in
+   doing so flattened a distinction the portal was making on purpose: three buttons on
+   the order page (Post Payment Reminder, Start / View Off Boarding Schedule) were
+   green, and two more elsewhere are sage. Owner asked for them to stay distinguishable
+   -- not green, just not identical.
+   There is NO CSS hook for these. The green comes from a container rule keyed on a
+   generated class (`.jss148 div button`), the buttons themselves are identical to the
+   blue ones, and the container's inline style is shared with containers that are not
+   green. content.js therefore reads the site's OWN stylesheets, finds the declared
+   colour behind each button, and tags whichever ones differ from the most common --
+   see tagAltButtons(). This styles that tag.
+
+   Teal rgb(30,94,91), chosen by the owner 2026-08-20 from teal / outlined / steel /
+   leave-it-blue, after violet rgb(88,52,120) was rejected on looks.
+   It separates by HUE ONLY: 43 rgb from the primary blue and 1.04 in lightness, so the
+   two fills are equally bright and differ only in being blue against blue-green. I had
+   argued against exactly this and picked violet for separating on both axes -- the
+   owner disagreed, and it is their call. Do not "fix" it back on the strength of the
+   numbers; the numbers were never the objection.
+   It is also the value already in this file for the success alert (rule 12) and the
+   status-change note (rule 11), so nothing new enters the palette. That overloads teal
+   slightly -- it now means both "positive/system" and "secondary action" -- which is
+   accepted: the two never appear on the same control.
+   Rejected on the way, do not retry without new information:
+   - violet rgb(88,52,120): owner rejected on looks, 2026-08-20.
+   - green: what the owner asked to move away from in the first place.
+   - steel rgb(60,72,96): reads as muted, and disabled buttons are now grey too (rule 5),
+     so a desaturated fill sits closer to "disabled" than it should.
+   - red/crimson: means alarm everywhere else in this file (rules 10, 15, 19). */
+html:not([data-br-dark="off"]) .MuiButton-contained[data-br-alt]:not(.Mui-disabled) {
+  background-color: rgb(30, 94, 91) !important;
+  color: rgb(226, 232, 240) !important;
+}
+html:not([data-br-dark="off"]) .MuiButton-contained[data-br-alt]:not(.Mui-disabled):hover {
+  background-color: rgb(20, 64, 62) !important;
 }
 
 /* --- Still open -------------------------------------------------------------

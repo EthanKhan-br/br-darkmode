@@ -247,6 +247,98 @@ mode too. There is nothing to hook, so it is absent from rule 16.
 component the open item below is about. Option ids (`react-select-N-option-M`) are
 regenerated per mount — match options by text, never by id.
 
+### Full-page crawl of /company-order/<id> and /tax-orders/<id> (2026-08-20)
+
+Rules 18-21 came out of this. Two findings worth keeping:
+
+- **MUI's `secondary` palette entry on this portal is the brand orange.** Every
+  component that asks for it inherits the same rust rule 17 took off the section bars:
+  `.MuiBadge-colorSecondary`, `.MuiChip-colorSecondary`. They are coloured by CLASS
+  and carry no `style` attribute, which is precisely why rule 14 never caught them —
+  its `[style*="background-color"]` hook is what separates inline-coloured tags from
+  everything else. When something looks rust, check whether it is asking for `secondary`
+  before looking for a hook.
+- **Two table-row tints were converging and no contrast audit would ever have shown it.**
+  The site tints rows lavender `rgb(203,195,227)` and pale blue `rgb(195,220,237)`;
+  the engine landed them 5 rgb apart. This is the notes-panel lesson repeating: on this
+  portal, a distinction that disappears is usually convergence, not contrast. Rule 18
+  puts them 37 apart.
+
+| what | hook | rule |
+|---|---|---|
+| All contained buttons | `.MuiButton-contained` (rule 5, widened from `-containedPrimary`) | 5 |
+| Order status banner | `div[style*="rgb(1, 167, 4)"]` | 18 |
+| Tinted table rows | `tr[style*="rgb(203, 195, 227)"]` / `rgb(195, 220, 237)` | 18 |
+| Badges + secondary chip | `.MuiBadge-colorSecondary` / `-colorError` / `.MuiChip-colorSecondary` | 19 |
+| Segmented filters | `.MuiToggleButton-root[.Mui-selected]` | 20 |
+| Muted secondary text | `p.text`, `.inline-icon p` | 21 |
+
+- **Rule 5's widening flattened three green buttons and the owner rejected that**
+  (2026-08-20): "not green but still distinguishable, right now all 4 buttons look the
+  same". Rule 22 + `tagAltButtons()` is the answer — see below. Don't undo it by
+  widening rule 5 further.
+- **Disabled buttons must stay excluded from rule 5.** Pinning the fill with
+  `!important` overrode MUI's own greying, so `Generate PDF`, `Upload PDF` and `Send`
+  rendered as solid inviting blue. `:not(.Mui-disabled)` hands them back to the engine.
+- `.MuiToggleButton-root.Mui-selected` is marked by MUI with
+  `background: rgba(10,10,10,0.12)` — about one RGB step on a dark page, the same
+  invisible-marker trap as the sidebar sub-items. The **labels** carry the state.
+- **Two muted-text occurrences were deliberately left at engine output** (4.36:1 and
+  4.16:1): a bare `<i>` in a MuiGrid cell, and a react-select placeholder whose only
+  class is an emotion hash. Hard rule 1 forbids the latter and a dim placeholder is
+  correct anyway. Don't "fix" these by blanket-colouring `p` or `i` — this file pins
+  text colour in seven rules and a global paragraph colour fights all of them.
+- Three more company tags needed mapping: `NON-RESIDENT OWNERS rgb(159,140,212)` and
+  `NON-RESIDENT OWNERSHIP rgb(255,31,31)` (crimson, the deliberate opposite of US
+  RESIDENT's teal) and `P15 - General Products rgb(171,71,188)` (blue, sharing the lane
+  with S03 - Professional Services). **The company-label react-select was not mounted on
+  either page**, so the full palette still can't be pulled the way the tax labels were —
+  rule 14's neutral fallback will keep catching new ones one at a time until it is.
+
+### Reading the site's own colours back out of its stylesheets (2026-08-20)
+
+`tagAltButtons()` in `content.js`. **Dark Reader appends override sheets rather than
+rewriting the originals, so the portal's own declared colours are still readable at
+runtime** — this is the general escape hatch for "the signal is only in a generated
+class". It is the same move as `tagActiveNav()`, one layer up.
+
+The case that forced it: three buttons are green because of a **container** rule,
+`.jss148 div button { background: rgb(40,167,69) }`. The buttons themselves are
+identical to the blue ones — same classes, same `jss165`, same inline `width:100%` —
+and the container's inline style (`display:flex`) is shared with containers that are
+not green. So there is genuinely no CSS hook, and no amount of looking will find one.
+
+How it decides, without hardcoding anything:
+
+1. Walk `document.styleSheets`, skipping any sheet whose `ownerNode` has class
+   `darkreader`, and collect `[selectorText, background]` for every rule that sets one.
+   Skip `:hover/:focus/:active` or the resting colour becomes whichever came last.
+2. For each contained button, `el.matches(sel)` against those rules, last wins.
+3. **The most common declared colour IS the site's default.** Anything else was a
+   deliberate choice → tag `[data-br-alt]`.
+
+Verified live on `/company-order/454991`: 18 buttons, all claimed by a rule, majority
+`rgb(60,159,223)` ×12, tagged `rgb(40,167,69)` ×3 (the green ones), `rgb(168,188,123)`
+×2 (+ Add Item, Reminder Schedules), `rgb(229,127,90)` ×1 (Upload PDF).
+
+- **All non-default buttons share ONE alt colour.** Three site colours collapse to
+  violet deliberately — the semantic that matters is "not the primary action", and four
+  button colours on one page is what the flattening was supposed to fix.
+- Cache invalidation is by `declared.size < btns.length`, **not** by stylesheet count:
+  JSS appends rules to a sheet it already registered, so the count doesn't move.
+- The alt fill is **teal `rgb(30,94,91)`**, the value rules 11 and 12 already use.
+  Owner picked it 2026-08-20 from teal / outlined / steel / leave-it-blue, after
+  rejecting violet `rgb(88,52,120)` on looks. It separates by **hue only** — 43 rgb and
+  1.04 in lightness. I had argued for violet precisely because it separated on both
+  axes; that argument lost, and `verify-fixes.js` deliberately carries no lightness
+  check for this pair so it can't be "fixed" back. **The numbers were never the
+  objection** — three colour rounds on this portal have now ended that way.
+- **Button hover darkens, it does not lighten.** The site lightens to rgb(36,121,175),
+  which drops the label to 3.38:1 — a light label loses contrast as the fill rises. Down
+  gives 7.59:1 and still reads as a 1.48 step. Generalise: on this dark UI the honest
+  direction for a state change is usually down.
+
+
 ## Sidebar structure (inspected 2026-08-18 — don't re-derive)
 
 ```
