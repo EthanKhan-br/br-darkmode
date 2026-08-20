@@ -354,58 +354,180 @@ html:not([data-br-dark="off"]) [data-testid$="-checkbox"].Mui-checked {
 }
 
 
-/* --- 14. Company tag pills --------------------------------------------------
-   The tag row under Company Details. These are MuiChip-root with the tag colour set
-   INLINE per tag, and rule 6's 40% black overlay is what makes them mud -- the same
-   fault as the Passed Due pill, on a much wider palette.
-   Rule 6 cannot simply be relaxed here, because these colours span an enormous range
-   and no single overlay serves them:
+/* --- 14. Company tag pills and tax order labels ------------------------------
+   Both are MuiChip-root with the colour set INLINE, and rule 6's 40% black overlay
+   is what made them mud. Rule 6 cannot simply be relaxed here: these colours span an
+   enormous range and no single overlay serves them.
      overlay  0%  ->  white label 2.94:1  (the neon green tag fails outright)
      overlay 40%  ->  white label 6.88:1  but rgb(126,30,30) becomes rgb(76,18,18)
-   Contrast and legibility pull in opposite directions, so the overlay is dropped and
-   the colours are assigned instead. The source palette is not worth preserving: it
-   contains the CSS keyword `orange`, a neon green, and two different tags sharing one
-   red -- it was assembled ad hoc by whoever created the tags, not designed.
-   Hooks are the inline colour prefix, comma-free for the same reasons as rule 11.
+   Contrast and legibility pull opposite ways, so the overlay is dropped here and the
+   colours are assigned instead.
+
+   The 25 tax order labels were read from the Label filter's react-select options via
+   its React fiber -- `{value, label, color}` -- not collected by eye. The company tags
+   were measured on /company/<id>.
+
+   THEY ARE GROUPED, NOT INDIVIDUALLY COLOURED. One order can carry all 25 labels at
+   once -- the test order does -- and 25 distinguishable hues do not exist at this
+   lightness. Grouping means the row answers "does this need me?" at a glance and the
+   text carries the specifics:
+     crimson  needs attention   URGENT, DEADLINE, UNPAID, MISSING ITEMS
+     green    settled          PAID, SUBSCRIPTION
+     violet   plan type        A LA CARTE, BUSINESSJETT, REVIVER
+     blue     kind of return   1040NR, 1120 PROFORMA, SCHEDULE C ONLY, AMENDMENT, ...
+     teal     paperwork moving PRINTED, DOCUMENTS BEING PRODUCED, INCOME/PACKAGE
+                                CHECK, ZERO ACTIVITY
+     magenta  awaiting a form  SIGNATURE REMINDER, CC AUTHORIZATION FORM,
+                                EXTENSION FILED
+   Owner regrouped two of these by hand (2026-08-20): EXTENSION FILED reads as a form
+   you are waiting on rather than paperwork already moving, and ZERO ACTIVITY belongs
+   with PRINTED. Slate is now unused here -- left in the palette, not deleted, because
+   the next label to appear will need somewhere to go.
+   PAID is green and UNPAID crimson deliberately: the pair that must never be misread.
+
+   Selectors carry the FULL colour. Prefixes were used before and cannot survive this
+   set -- URGENT rgb(255,0,0) and CC AUTHORIZATION FORM rgb(255,139,77) share rgb(255,
+   and BUSINESSJETT rgb(241,188,188) collides with PROFILE-ACCOUNTANT rgb(241,109,65).
+   verify-fixes.js splits selectors on commas at bracket depth zero, so this is safe.
+
    `.MuiChip-root[style*="background-color"]` is what separates these from every other
-   chip in the portal: status chips are coloured by class and carry no style attribute,
-   so the Passed Due pill in rule 10 is untouched by this.
-   Anything unmapped falls back to the neutral card fill rather than to mud, so a tag
-   colour nobody has seen yet still renders as a clean pill.
-   rgb(241  rgb(103, 28, 53)   orange-red  -> crimson
-   orange   rgb(105, 31, 94)   CSS keyword -> magenta
-   rgb(221  rgb(73, 41, 97)    salmon      -> violet
-   rgb(229  rgb(27, 60, 97)    red         -> blue
-   rgb(232  rgb(53, 60, 77)    pink        -> slate
-   rgb(125  rgb(38, 89, 59)    green       -> green (kept)
-   rgb(114  rgb(30, 94, 91)    neon green  -> teal */
+   chip: status chips are coloured by class and carry no style attribute, so rule 10's
+   Passed Due pill is untouched. Unmapped colours fall back to the neutral fill below
+   rather than to mud -- but note that a NEW label the portal adds will render neutral
+   until it is mapped here. That is the maintenance cost of owning these outright. */
 html:not([data-br-dark="off"]) .MuiChip-root[style*="background-color"] {
   background-color: rgb(41, 44, 56) !important;
   box-shadow: none !important;
   color: rgb(226, 232, 240) !important;
 }
-html:not([data-br-dark="off"]) .MuiChip-root[style*="background-color"][style*="rgb(241"] {
+/* PROFILE-ACCOUNTANT */
+html:not([data-br-dark="off"]) .MuiChip-root[style*="background-color"][style*="rgb(241, 109, 65)"] {
   background-color: rgb(103, 28, 53) !important;
 }
+/* Trademark (CSS keyword) */
 html:not([data-br-dark="off"]) .MuiChip-root[style*="background-color"][style*="orange"] {
   background-color: rgb(105, 31, 94) !important;
 }
-html:not([data-br-dark="off"]) .MuiChip-root[style*="background-color"][style*="rgb(221"] {
+/* Needs Banking / Expense Tracking */
+html:not([data-br-dark="off"]) .MuiChip-root[style*="background-color"][style*="rgb(221, 100, 100)"] {
   background-color: rgb(73, 41, 97) !important;
 }
-html:not([data-br-dark="off"]) .MuiChip-root[style*="background-color"][style*="rgb(229"] {
+/* S03- Professional Services */
+html:not([data-br-dark="off"]) .MuiChip-root[style*="background-color"][style*="rgb(229, 57, 53)"] {
   background-color: rgb(27, 60, 97) !important;
 }
-html:not([data-br-dark="off"]) .MuiChip-root[style*="background-color"][style*="rgb(232"] {
+/* GENERIC EMAIL */
+html:not([data-br-dark="off"]) .MuiChip-root[style*="background-color"][style*="rgb(232, 120, 120)"] {
   background-color: rgb(53, 60, 77) !important;
 }
-html:not([data-br-dark="off"]) .MuiChip-root[style*="background-color"][style*="rgb(125"] {
+/* United States */
+html:not([data-br-dark="off"]) .MuiChip-root[style*="background-color"][style*="rgb(125, 181, 111)"] {
   background-color: rgb(38, 89, 59) !important;
 }
-html:not([data-br-dark="off"]) .MuiChip-root[style*="background-color"][style*="rgb(114"] {
+/* US RESIDENT */
+html:not([data-br-dark="off"]) .MuiChip-root[style*="background-color"][style*="rgb(114, 238, 47)"] {
   background-color: rgb(30, 94, 91) !important;
 }
-
+/* URGENT */
+html:not([data-br-dark="off"]) .MuiChip-root[style*="background-color"][style*="rgb(255, 0, 0)"] {
+  background-color: rgb(103, 28, 53) !important;
+}
+/* DEADLINE */
+html:not([data-br-dark="off"]) .MuiChip-root[style*="background-color"][style*="rgb(87, 29, 195)"] {
+  background-color: rgb(103, 28, 53) !important;
+}
+/* UNPAID */
+html:not([data-br-dark="off"]) .MuiChip-root[style*="background-color"][style*="rgb(210, 15, 15)"] {
+  background-color: rgb(103, 28, 53) !important;
+}
+/* MISSING ITEMS FOR FINANCIALS */
+html:not([data-br-dark="off"]) .MuiChip-root[style*="background-color"][style*="rgb(77, 134, 19)"] {
+  background-color: rgb(103, 28, 53) !important;
+}
+/* PAID */
+html:not([data-br-dark="off"]) .MuiChip-root[style*="background-color"][style*="rgb(224, 26, 112)"] {
+  background-color: rgb(38, 89, 59) !important;
+}
+/* SUBSCRIPTION */
+html:not([data-br-dark="off"]) .MuiChip-root[style*="background-color"][style*="rgb(158, 239, 129)"] {
+  background-color: rgb(38, 89, 59) !important;
+}
+/* A LA CARTE */
+html:not([data-br-dark="off"]) .MuiChip-root[style*="background-color"][style*="rgb(225, 253, 13)"] {
+  background-color: rgb(73, 41, 97) !important;
+}
+/* BUSINESSJETT */
+html:not([data-br-dark="off"]) .MuiChip-root[style*="background-color"][style*="rgb(241, 188, 188)"] {
+  background-color: rgb(73, 41, 97) !important;
+}
+/* REVIVER */
+html:not([data-br-dark="off"]) .MuiChip-root[style*="background-color"][style*="rgb(209, 209, 209)"] {
+  background-color: rgb(73, 41, 97) !important;
+}
+/* 1040NR */
+html:not([data-br-dark="off"]) .MuiChip-root[style*="background-color"][style*="rgb(15, 53, 204)"] {
+  background-color: rgb(27, 60, 97) !important;
+}
+/* 1120 PROFORMA */
+html:not([data-br-dark="off"]) .MuiChip-root[style*="background-color"][style*="rgb(214, 122, 181)"] {
+  background-color: rgb(27, 60, 97) !important;
+}
+/* SCHEDULE C ONLY */
+html:not([data-br-dark="off"]) .MuiChip-root[style*="background-color"][style*="rgb(18, 213, 226)"] {
+  background-color: rgb(27, 60, 97) !important;
+}
+/* AMENDMENT */
+html:not([data-br-dark="off"]) .MuiChip-root[style*="background-color"][style*="rgb(176, 176, 176)"] {
+  background-color: rgb(27, 60, 97) !important;
+}
+/* FISCAL YEAR */
+html:not([data-br-dark="off"]) .MuiChip-root[style*="background-color"][style*="rgb(217, 155, 155)"] {
+  background-color: rgb(27, 60, 97) !important;
+}
+/* NONRESIDENT OWNED SMLLC */
+html:not([data-br-dark="off"]) .MuiChip-root[style*="background-color"][style*="rgb(13, 222, 197)"] {
+  background-color: rgb(27, 60, 97) !important;
+}
+/* MMLLC WITH NR OWNERSHIP */
+html:not([data-br-dark="off"]) .MuiChip-root[style*="background-color"][style*="rgb(226, 252, 29)"] {
+  background-color: rgb(27, 60, 97) !important;
+}
+/* ITIN APPLICATION */
+html:not([data-br-dark="off"]) .MuiChip-root[style*="background-color"][style*="rgb(104, 106, 12)"] {
+  background-color: rgb(27, 60, 97) !important;
+}
+/* Paper File */
+html:not([data-br-dark="off"]) .MuiChip-root[style*="background-color"][style*="rgb(236, 132, 14)"] {
+  background-color: rgb(27, 60, 97) !important;
+}
+/* EXTENSION FILED */
+html:not([data-br-dark="off"]) .MuiChip-root[style*="background-color"][style*="rgb(223, 12, 195)"] {
+  background-color: rgb(105, 31, 94) !important;
+}
+/* DOCUMENTS BEING PRODUCED */
+html:not([data-br-dark="off"]) .MuiChip-root[style*="background-color"][style*="rgb(148, 25, 97)"] {
+  background-color: rgb(30, 94, 91) !important;
+}
+/* PRINTED */
+html:not([data-br-dark="off"]) .MuiChip-root[style*="background-color"][style*="rgb(90, 230, 15)"] {
+  background-color: rgb(30, 94, 91) !important;
+}
+/* INCOME/PACKAGE CHECK */
+html:not([data-br-dark="off"]) .MuiChip-root[style*="background-color"][style*="rgb(220, 144, 116)"] {
+  background-color: rgb(30, 94, 91) !important;
+}
+/* SIGNATURE REMINDER */
+html:not([data-br-dark="off"]) .MuiChip-root[style*="background-color"][style*="rgb(115, 39, 150)"] {
+  background-color: rgb(105, 31, 94) !important;
+}
+/* CC AUTHORIZATION FORM */
+html:not([data-br-dark="off"]) .MuiChip-root[style*="background-color"][style*="rgb(255, 139, 77)"] {
+  background-color: rgb(105, 31, 94) !important;
+}
+/* ZERO ACTIVITY */
+html:not([data-br-dark="off"]) .MuiChip-root[style*="background-color"][style*="rgb(41, 255, 212)"] {
+  background-color: rgb(30, 94, 91) !important;
+}
 
 /* --- 15. Warning / error alerts ---------------------------------------------
    The UnPaid Subscriptions box, sitting directly above the success alert rule 12
@@ -441,6 +563,108 @@ html:not([data-br-dark="off"]) .MuiAlert-standardError li {
 html:not([data-br-dark="off"]) .MuiAlert-standardWarning .MuiAlert-icon,
 html:not([data-br-dark="off"]) .MuiAlert-standardError .MuiAlert-icon {
   color: rgb(255, 107, 107) !important;
+}
+
+
+/* --- 16. Tax order stage boxes ----------------------------------------------
+   /tax-orders, the Stage column. Classless <div>s carrying an inline `background:`
+   SHORTHAND -- which is why rule 14 never touched them: its selector matches
+   `background-color` specifically, a different string. There is no class, no testid
+   and no author-written attribute on these nodes, so the site's own colour IS the
+   only hook available.
+   The full map was read out of the app bundle (object `Z` in main.<hash>.chunk.js),
+   not guessed and not collected one screenshot at a time. All four stages that had
+   been measured by hand matched it exactly, so the rest are trusted.
+
+   Left to the engine these fail in both directions: New Questions Issued landed at
+   rgb(47,52,67), ~1.1 off the row and effectively gone, while Waiting For Client Info
+   became rgb(32,10,123), the saturated dark blue this file warns about elsewhere.
+   Eleven of the sixteen site colours are warm pastels, so most of the column was
+   converging on the same brown anyway.
+
+   SIXTEEN STAGES DO NOT GET SIXTEEN COLOURS. Seven hues already needed a search to
+   hold 33 rgb apart; sixteen at one lightness would be mush, and no one can hold a
+   sixteen-colour key in their head. They are grouped by what the stage MEANS, and the
+   label text carries the detail. Colour answers "is this blocked, moving, or done".
+   rgb(144, 215, 160)    rgb(73, 41, 97)    violet  parked           Pending
+   rgb(204, 119, 204)    rgb(73, 41, 97)    violet  parked           Hold
+   rgb(161, 138, 255)    rgb(27, 60, 97)    blue    waiting on client Waiting For Client Info
+   rgb(255, 129, 129)    rgb(27, 60, 97)    blue    waiting on client Waiting for Answers to Questions
+   rgb(255, 215, 146)    rgb(27, 60, 97)    blue    waiting on client Waiting For Signatures
+   rgb(251, 160, 217)    rgb(30, 94, 91)    teal    being worked     Processing
+   rgb(215, 226, 148)    rgb(30, 94, 91)    teal    being worked     Review in Progress
+   rgb(195, 186, 186)    rgb(30, 94, 91)    teal    being worked     Client Review In Progress
+   rgb(255, 160, 122)    rgb(30, 94, 91)    teal    being worked     Revisions In Progress
+   rgb(255, 183, 147)    rgb(30, 94, 91)    teal    being worked     Finalization
+   rgb(138, 183, 255)    rgb(30, 94, 91)    teal    being worked     Preparation In Progress
+   rgb(199, 192, 237)    rgb(105, 31, 94)   magenta needs attention  New Questions Issued
+   rgb(255, 204, 68)     rgb(38, 89, 59)    green   positive         Questions Resolved
+   rgb(127, 183, 126)    rgb(38, 89, 59)    green   positive         Completed
+   rgb(235, 94, 94)      rgb(103, 28, 53)   crimson problem          Filed and Rejected
+   rgb(252, 65, 55)      rgb(103, 28, 53)   crimson problem          Cancelled
+
+   Selectors carry the FULL colour, not a prefix: three stages share rgb(255 --
+   Waiting for Answers, Waiting For Signatures and Finalization -- and a prefix cannot
+   separate them. That needed verify-fixes.js's selector splitter taught about commas
+   inside brackets, which it now is.
+
+   Two site bugs surfaced while reading the map, neither ours to fix here:
+   - "Review Completed" is `#D7E8`. Four hex digits is not valid CSS, so that stage
+     gets NO background at all, in light mode too. It has no colour to hook, which is
+     why it is absent below.
+   - "Questions Resolved" `#FC4` and "Hold" `#c7c` are 3-digit hex, which the app
+     expands to rgb(255,204,68) and rgb(204,119,204). Those expansions are what the
+     inline style actually contains, and what is matched here. */
+html:not([data-br-dark="off"]) tbody td div[style*="background: rgb"] {
+  color: rgb(226, 232, 240) !important;
+}
+html:not([data-br-dark="off"]) tbody td div[style*="background: rgb"][style*="rgb(144, 215, 160)"] {
+  background: rgb(73, 41, 97) !important;
+}
+html:not([data-br-dark="off"]) tbody td div[style*="background: rgb"][style*="rgb(204, 119, 204)"] {
+  background: rgb(73, 41, 97) !important;
+}
+html:not([data-br-dark="off"]) tbody td div[style*="background: rgb"][style*="rgb(161, 138, 255)"] {
+  background: rgb(27, 60, 97) !important;
+}
+html:not([data-br-dark="off"]) tbody td div[style*="background: rgb"][style*="rgb(255, 129, 129)"] {
+  background: rgb(27, 60, 97) !important;
+}
+html:not([data-br-dark="off"]) tbody td div[style*="background: rgb"][style*="rgb(255, 215, 146)"] {
+  background: rgb(27, 60, 97) !important;
+}
+html:not([data-br-dark="off"]) tbody td div[style*="background: rgb"][style*="rgb(251, 160, 217)"] {
+  background: rgb(30, 94, 91) !important;
+}
+html:not([data-br-dark="off"]) tbody td div[style*="background: rgb"][style*="rgb(215, 226, 148)"] {
+  background: rgb(30, 94, 91) !important;
+}
+html:not([data-br-dark="off"]) tbody td div[style*="background: rgb"][style*="rgb(195, 186, 186)"] {
+  background: rgb(30, 94, 91) !important;
+}
+html:not([data-br-dark="off"]) tbody td div[style*="background: rgb"][style*="rgb(255, 160, 122)"] {
+  background: rgb(30, 94, 91) !important;
+}
+html:not([data-br-dark="off"]) tbody td div[style*="background: rgb"][style*="rgb(255, 183, 147)"] {
+  background: rgb(30, 94, 91) !important;
+}
+html:not([data-br-dark="off"]) tbody td div[style*="background: rgb"][style*="rgb(138, 183, 255)"] {
+  background: rgb(30, 94, 91) !important;
+}
+html:not([data-br-dark="off"]) tbody td div[style*="background: rgb"][style*="rgb(199, 192, 237)"] {
+  background: rgb(105, 31, 94) !important;
+}
+html:not([data-br-dark="off"]) tbody td div[style*="background: rgb"][style*="rgb(255, 204, 68)"] {
+  background: rgb(38, 89, 59) !important;
+}
+html:not([data-br-dark="off"]) tbody td div[style*="background: rgb"][style*="rgb(127, 183, 126)"] {
+  background: rgb(38, 89, 59) !important;
+}
+html:not([data-br-dark="off"]) tbody td div[style*="background: rgb"][style*="rgb(235, 94, 94)"] {
+  background: rgb(103, 28, 53) !important;
+}
+html:not([data-br-dark="off"]) tbody td div[style*="background: rgb"][style*="rgb(252, 65, 55)"] {
+  background: rgb(103, 28, 53) !important;
 }
 
 /* --- Still open -------------------------------------------------------------

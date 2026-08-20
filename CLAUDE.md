@@ -194,6 +194,59 @@ violet / slate / magenta / crimson / green. Saturated dark blue is the one to av
 at card lightness it lands at 1.00 against the page, because the page is itself dark
 blue.
 
+
+### Tax service orders (`/tax-orders`, inspected 2026-08-20)
+
+**Read the app's own colour maps. Do not collect them by eye, and do not step through
+states one at a time.** Both palettes on this page came out of the running app in a
+single read each, after I had already started the slow way:
+
+- **Stage colours** live in the JS bundle as object `Z` in `main.<hash>.chunk.js`.
+  Fetch the bundle from the page and search it. All four stages that had been measured
+  by hand matched it exactly, which is what made the other twelve trustworthy.
+- **Label colours** live on the Label filter's react-select **React fiber** as
+  `options: [{value, label, color}]`. Walk `__reactFiber$…` up via `.return` until a
+  node has `memoizedProps.options`. The Stage select carries only `{label, value}`, so
+  check both before assuming.
+
+That replaced a plan to have the owner set a test order to each of 16 stages in turn.
+When a colour map is needed, look in the bundle and the fiber first.
+
+Do **not** reach for the API to get these. It is a separate host
+(`…execute-api.us-west-1.amazonaws.com/prod/…`) and needs the app's auth token; taking
+that token is off limits.
+
+| what | hook | rule |
+|---|---|---|
+| Stage boxes | `tbody td div[style*="background: rgb"]` + full colour | 16 |
+| Tax order labels | `.MuiChip-root[style*="background-color"]` + full colour | 14 |
+
+- Stage boxes are **classless divs** — no class, no testid, no attribute. The site's
+  own inline colour is the only hook that exists, which is why the map was needed.
+  They use the `background:` SHORTHAND; rule 14 matches `background-color`, which is
+  why the two rules never collide.
+- **Selectors carry the full colour, not a prefix.** Three stages share `rgb(255` and
+  BUSINESSJETT `rgb(241,188,188)` collides with the company tag PROFILE-ACCOUNTANT
+  `rgb(241,109,65)`. `verify-fixes.js` now splits selectors on commas **at bracket
+  depth zero**, so full colours inside `[style*=…]` are safe to use.
+- **16 stages and 25 labels are grouped, not individually coloured.** One order can
+  carry all 25 labels at once. Twenty-five distinguishable hues do not exist at this
+  lightness — seven already needed a search to hold 33 rgb apart. Colour answers
+  "does this need me?" and the text carries the specifics.
+- **Rule 14's fallback is load-bearing.** Any inline-coloured chip that is not mapped
+  renders neutral grey. That is deliberate (neutral beats mud) but it means a NEW
+  label created in the portal looks broken until it is added. This already bit once:
+  the /tax-orders labels were grey because rule 14 was written for company tags and
+  caught them too.
+
+**A portal bug, not ours:** the stage `Review Completed` is `#D7E8` in the bundle. Four
+hex digits is not valid CSS, so that stage renders with no background at all, in light
+mode too. There is nothing to hook, so it is absent from rule 16.
+
+**The filter dropdowns are react-select** (`.css-2b097c-container`), which is the
+component the open item below is about. Option ids (`react-select-N-option-M`) are
+regenerated per mount — match options by text, never by id.
+
 ## Sidebar structure (inspected 2026-08-18 — don't re-derive)
 
 ```
@@ -346,11 +399,10 @@ The repo has no committed identity.
   **Generalise from this:** on this portal a category that stops being distinguishable
   is almost never a contrast bug. Check whether the source colours share a hue family
   first, and measure pairwise separation, which no contrast ratio will show you.
-- **Rule 15 is reasoned, not measured.** The UnPaid Subscriptions alert was written
-  against `MuiAlert-standardWarning` without being seen: `/company-tax-order/4326`
-  redirects to the dashboard, so I never found the real route. The class is MUI's own
-  API and `standardSuccess` is confirmed on the same portal, so it should hold — but
-  it is the one rule in the file no measurement backs. Verify it, and record the route,
-  next time that page is open.
+- ~~**Rule 15 is reasoned, not measured.**~~ Confirmed visually by the owner
+  2026-08-20: `MuiAlert-standardWarning` was the right class, and the alarm box renders
+  red above the teal success box as intended. **The route is still unrecorded** —
+  `/company-tax-order/4326` redirects to the dashboard, so if that page needs
+  inspecting again, get the URL from the address bar rather than guessing it.
 - **Pages never walked:** none — the walk covered all 15. Re-walk after any major
   portal deploy, since MUI hashes and layouts move.

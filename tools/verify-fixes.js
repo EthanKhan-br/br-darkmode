@@ -123,10 +123,26 @@ for (const v of ['rgb(107, 120, 150)', 'rgb(110, 175, 240)', 'rgb(146, 160, 186)
 // An unguarded rule keeps restyling the portal after the user picks Off -- the bug
 // that turned the logo yellow with the extension switched off.
 console.log('--- every rule guarded against Off ---');
+// Commas inside [attr="rgb(1, 2, 3)"] are NOT selector separators. The naive
+// split(',') reported those as unguarded rules, which blocked using a full colour
+// in a selector -- and three tax stages share the rgb(255 prefix, so partial
+// matches cannot tell them apart. Depth-aware split, so precise selectors are usable.
+const splitSelectors = (text) => {
+  const out = []; let buf = '', depth = 0;
+  for (const ch of text) {
+    if (ch === '[' || ch === '(') depth++;
+    else if (ch === ']' || ch === ')') depth--;
+    if (ch === ',' && depth === 0) { out.push(buf); buf = ''; continue; }
+    buf += ch;
+  }
+  out.push(buf);
+  return out.map((x) => x.trim()).filter(Boolean);
+};
+
 let guarded = 0;
 for (const block of css.replace(/\/\*[\s\S]*?\*\//g, '').split('}')) {
   if (!block.includes('{')) continue;
-  for (const sel of block.split('{')[0].split(',').map((x) => x.trim()).filter(Boolean)) {
+  for (const sel of splitSelectors(block.split('{')[0])) {
     if (sel.startsWith(GUARD)) guarded++;
     else line(false, 'unguarded', sel.slice(0, 58));
   }
