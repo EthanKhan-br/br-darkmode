@@ -152,11 +152,303 @@ html:not([data-br-dark="off"]) [data-br-active] span {
   color: rgb(226, 232, 240) !important;
 }
 
+
+/* --- 9. Task row hover ------------------------------------------------------
+   The portal declares its own `background-color: #fbffb3` on task row hover -- a
+   pale butter yellow, not a grey. The engine inverts it faithfully (hue ~62deg
+   kept, lightness 85% -> 17%) and lands on rgb(76,78,10), a dirty olive band. Not
+   an engine bug, so the fix is to override the hue choice rather than correct it.
+   rgb(44,50,64) is 1.21:1 against the table -- felt, not loud, and in line with the
+   neutral blue-grey every other table in the portal already lands on.
+   data-testid="task-<id>-row" is author-written and scopes this to the Dashboard
+   task tables; the collapsed detail rows are excluded so the hover keeps matching
+   the portal's own behaviour exactly. */
+html:not([data-br-dark="off"]) tr[data-testid^="task-"]:not([data-testid$="-details-row"]):hover {
+  background-color: rgb(44, 50, 64) !important;
+}
+
+/* --- 10. Overdue date cell --------------------------------------------------
+   The PASSED DUE pill read as murky because of RULE 6, not the engine. Rule 6
+   paints rgba(0,0,0,0.4) over every .MuiChip-root, which drags this chip's own
+   rgb(183,10,10) down to ~rgb(110,6,6) -- 1.25:1 against the row, a dark smudge
+   rather than a badge. Rule 6 can't just be softened: at 30% the worst status chip
+   elsewhere falls to 3.89:1, under AA. So exempt this chip and repaint it.
+   rgb(211,47,47) is 3.11:1 on the table, clearing 1.4.11 for a UI boundary. The
+   label is 10px, so it needs the full 4.5 -- rule 6's rgb(214,218,225) only makes
+   3.55 here, white makes 4.98.
+   The date is a bare text node with no element of its own, so its color has to be
+   set on the cell. :has() replaces the generated class exactly: "cell contains a
+   chip" and "cell is overdue" correlate 1:1 across all 14, and the Today cells
+   have no chip, so they can't be caught by it.
+   rgb(255,145,138) lifts the date from 5.34:1 to 7.13:1, and 4.42 -> 5.91 hovered. */
+html:not([data-br-dark="off"]) tr[data-testid^="task-"] td.MuiTableCell-body:has(.MuiChip-root) {
+  color: rgb(255, 145, 138) !important;
+}
+html:not([data-br-dark="off"]) tr[data-testid^="task-"] .MuiChip-root {
+  background-color: rgb(211, 47, 47) !important;
+  box-shadow: none !important;
+  color: rgb(255, 255, 255) !important;
+}
+
+/* --- 11. Notes panel cards --------------------------------------------------
+   The order-detail Notes panel colors each card by category with an INLINE style:
+   rgb(255,203,128) amber for ordinary notes (23 of 25 on the order inspected) and
+   rgb(175,225,175) green for status-change notes. Only two categories exist.
+   The engine handles those two badly in opposite directions -- on a long-lived page
+   it darkens the amber into a muddy olive-brown, and on a fresh load it flattens
+   both to the page background so the categories stop being distinguishable at all.
+   Neither is usable, so take the colors over outright.
+   A pale fill cannot survive inversion, so it is replaced outright rather than tinted.
+   THE SITE HUES ARE NOT KEPT. Amber cannot be dark: yellow and orange reach low
+   lightness only by becoming brown, so every attempt at a dark amber card read as mud
+   regardless of saturation (rgb(54,44,30) at 29% was sludge; rgb(63,45,13) at 65% was
+   still wrong). Cool hues have no such failure mode -- they stay legibly themselves all
+   the way down -- so the categories are re-hued rather than reproduced.
+   Slate-indigo hsl(240,22%,22%) for ordinary notes, teal hsl(176,50%,15%) for status
+   changes. The asymmetry is deliberate: 23 of 25 cards are ordinary notes, so colouring
+   the DEFAULT case means the panel shouts continuously and the signal is worth nothing.
+   The routine card stays a calm near-neutral and the rare status note is the only thing
+   carrying real hue. A violet default was tried first (hsl(276,40%,24%)) and reads as
+   too much across a full panel.
+   Saturated dark blue was ruled out on the way: at this lightness it lands at 1.00
+   against the page, since the portal background is itself a dark blue -- the slate here
+   works precisely because it stays under that, at 22% saturation and a higher lightness.
+   The fills are only 31 rgb apart by design; the accents are 109 apart and carry the
+   distinction. That is also a second axis away from the original amber/green, which was
+   a red-green pairing and failed for colour blind readers.
+   The base rule keeps a neutral fill so a category the site adds later still renders as
+   a card instead of inheriting whatever the engine settles on.
+   The hook is an attribute-substring match on the inline style -- deliberately on the
+   comma-free "rgb(255" / "rgb(175" prefix, both because it survives the site nudging
+   its palette and because verify-fixes.js splits selectors on commas. It is the category
+   color the site itself writes, no generated class involved, and if the palette ever
+   changes the match simply stops and the card falls back to the base rule below.
+   Dark Reader wins over the inline attribute with its own !important rule, not by
+   rewriting the attribute -- which is why matching on [style*=] still works. */
+html:not([data-br-dark="off"]) [data-testid="note-row"] {
+  background-color: rgb(41, 44, 56) !important;
+  border-left: 4px solid rgb(107, 120, 150) !important;
+  border-radius: 4px !important;
+}
+html:not([data-br-dark="off"]) [data-testid="note-row"][style*="rgb(255"] {
+  background-color: rgb(44, 44, 68) !important;
+  border-left-color: rgb(124, 140, 235) !important;
+}
+html:not([data-br-dark="off"]) [data-testid="note-row"][style*="rgb(175"] {
+  background-color: rgb(19, 57, 55) !important;
+  border-left-color: rgb(50, 205, 180) !important;
+}
+
+/* Note text is left to the engine at your peril. Measured on the same card in two
+   browsers minutes apart, the header line computed to rgb(215,219,225) in one and
+   rendered a dim tan in the other -- the engine derives text color from the ORIGINAL
+   amber fill, so what it settles on depends on when it processed the node. Rule 11
+   replaced the fill but not the text, which is why the heading stayed murky.
+   Both values are already in this file (rules 7 and 8) -- no new palette entries.
+   Hierarchy survives the flattening because the header is 12.8px/300 against the
+   body's 15px/400; it was never carrying the distinction by color alone.
+   nth-of-type targets the date/author and company lines. If a note ever has a
+   different number of header lines the worst case is a body line at 7.30:1 instead
+   of 11.09:1 -- still comfortably AA, which is why this is safe to do positionally. */
+html:not([data-br-dark="off"]) [data-testid="note-row"] p {
+  color: rgb(226, 232, 240) !important;
+}
+html:not([data-br-dark="off"]) [data-testid="note-row"] p:nth-of-type(-n+2) {
+  color: rgb(178, 190, 212) !important;
+}
+
+
+/* --- 12. Success alert (Active Subscriptions) -------------------------------
+   The panel above the notes is a MUI Alert at severity success -- a real public
+   class, MuiAlert-standardSuccess, so no guessing needed. The engine treats it the
+   same way it treats the note cards: on a fresh load it flattens the pale green fill
+   to the page background and the box stops reading as a box at all.
+   It reuses the status-change note's teal exactly, values and all, because it is the
+   same idea on the page -- a system-generated, positive-state block sitting in the
+   notes column. Two greens a few degrees apart would have read as a mistake.
+   Everything inside inherits its color from the alert root and nothing sets its own,
+   so the descendants are listed only to survive the engine colouring them directly;
+   the icon is the one thing that genuinely wants a separate value.
+   Only severity success is handled. It is the only alert on any page walked -- if
+   error or warning ever appear they will need their own hues, not this one. */
+html:not([data-br-dark="off"]) .MuiAlert-standardSuccess {
+  background-color: rgb(19, 57, 55) !important;
+  border-left: 4px solid rgb(50, 205, 180) !important;
+  border-radius: 4px !important;
+}
+html:not([data-br-dark="off"]) .MuiAlert-standardSuccess,
+html:not([data-br-dark="off"]) .MuiAlert-standardSuccess .MuiAlert-message,
+html:not([data-br-dark="off"]) .MuiAlert-standardSuccess .MuiAlertTitle-root,
+html:not([data-br-dark="off"]) .MuiAlert-standardSuccess li {
+  color: rgb(226, 232, 240) !important;
+}
+html:not([data-br-dark="off"]) .MuiAlert-standardSuccess .MuiAlert-icon {
+  color: rgb(50, 205, 180) !important;
+}
+
+
+/* --- 13. Notes category filter chips ----------------------------------------
+   The seven category filters above the notes list. Each is a <p> inside the label,
+   coloured by an inline style, and FIVE of the seven originals are warm pastels
+   (peach rgb(254,221,174), pale yellow rgb(253,255,221), amber rgb(255,203,128),
+   peach-pink rgb(254,199,180), pale green rgb(200,247,197)). Warm pastels all invert
+   to the same brown-olive, which is why the categories stopped being distinguishable
+   -- the long-standing "muddy brown-olive" open item. It was never a contrast failure;
+   every one of them passed AA while being useless.
+   So the hues are hand-assigned rather than derived. They were picked by search, not
+   by eye: seven hue lanes that skip 30-70deg entirely (where dark means brown), all
+   held inside a 24-27% lightness band so the row reads as one set, maximising the
+   WORST pairwise separation. Result is 33 rgb minimum apart with every label at
+   6.07:1 or better. Lightness was deliberately capped -- letting it range freely
+   scored 48 rgb apart but produced two chips visibly brighter than the rest, which
+   looks like a mistake rather than a system.
+   data-testid="<category>-checkbox" is author-written; the label is its next sibling,
+   so no :has() and no generated class is involved.
+   company    rgb(27, 60, 97)    hsl(212,56%,24%) blue
+   client     rgb(30, 94, 91)    hsl(178,52%,24%) teal
+   order      rgb(73, 41, 97)    hsl(274,40%,27%) violet
+   general    rgb(53, 60, 77)    hsl(221,19%,25%) slate
+   taxorder   rgb(105, 31, 94)   hsl(309,54%,27%) magenta
+   calls      rgb(103, 28, 53)   hsl(340,57%,26%) crimson
+   sales_rep  rgb(38, 89, 59)    hsl(145,40%,25%) green */
+html:not([data-br-dark="off"]) [data-testid="company-checkbox"] + .MuiFormControlLabel-label p {
+  background-color: rgb(27, 60, 97) !important;
+}
+html:not([data-br-dark="off"]) [data-testid="client-checkbox"] + .MuiFormControlLabel-label p {
+  background-color: rgb(30, 94, 91) !important;
+}
+html:not([data-br-dark="off"]) [data-testid="order-checkbox"] + .MuiFormControlLabel-label p {
+  background-color: rgb(73, 41, 97) !important;
+}
+html:not([data-br-dark="off"]) [data-testid="general-checkbox"] + .MuiFormControlLabel-label p {
+  background-color: rgb(53, 60, 77) !important;
+}
+html:not([data-br-dark="off"]) [data-testid="taxorder-checkbox"] + .MuiFormControlLabel-label p {
+  background-color: rgb(105, 31, 94) !important;
+}
+html:not([data-br-dark="off"]) [data-testid="calls-checkbox"] + .MuiFormControlLabel-label p {
+  background-color: rgb(103, 28, 53) !important;
+}
+html:not([data-br-dark="off"]) [data-testid="sales_rep-checkbox"] + .MuiFormControlLabel-label p {
+  background-color: rgb(38, 89, 59) !important;
+}
+html:not([data-br-dark="off"]) [data-testid="company-checkbox"] + .MuiFormControlLabel-label p,
+html:not([data-br-dark="off"]) [data-testid="client-checkbox"] + .MuiFormControlLabel-label p,
+html:not([data-br-dark="off"]) [data-testid="order-checkbox"] + .MuiFormControlLabel-label p,
+html:not([data-br-dark="off"]) [data-testid="general-checkbox"] + .MuiFormControlLabel-label p,
+html:not([data-br-dark="off"]) [data-testid="taxorder-checkbox"] + .MuiFormControlLabel-label p,
+html:not([data-br-dark="off"]) [data-testid="calls-checkbox"] + .MuiFormControlLabel-label p,
+html:not([data-br-dark="off"]) [data-testid="sales_rep-checkbox"] + .MuiFormControlLabel-label p {
+  color: rgb(226, 232, 240) !important;
+}
+
+/* The checked box itself came through as MUI's salmon secondary, which belongs to
+   nothing else on this page. The portal's own focus blue is already in this file
+   (rule 1) and is the only accent the chips underneath cannot collide with, since
+   none of the seven sits in that lane.
+   ponytail: the suffix match also catches any other -checkbox testid in the portal.
+   That is intentional -- a consistent checked colour is the right answer everywhere,
+   and no other value is being overridden that anyone chose deliberately. */
+html:not([data-br-dark="off"]) [data-testid$="-checkbox"].Mui-checked {
+  color: rgb(110, 175, 240) !important;
+}
+
+
+/* --- 14. Company tag pills --------------------------------------------------
+   The tag row under Company Details. These are MuiChip-root with the tag colour set
+   INLINE per tag, and rule 6's 40% black overlay is what makes them mud -- the same
+   fault as the Passed Due pill, on a much wider palette.
+   Rule 6 cannot simply be relaxed here, because these colours span an enormous range
+   and no single overlay serves them:
+     overlay  0%  ->  white label 2.94:1  (the neon green tag fails outright)
+     overlay 40%  ->  white label 6.88:1  but rgb(126,30,30) becomes rgb(76,18,18)
+   Contrast and legibility pull in opposite directions, so the overlay is dropped and
+   the colours are assigned instead. The source palette is not worth preserving: it
+   contains the CSS keyword `orange`, a neon green, and two different tags sharing one
+   red -- it was assembled ad hoc by whoever created the tags, not designed.
+   Hooks are the inline colour prefix, comma-free for the same reasons as rule 11.
+   `.MuiChip-root[style*="background-color"]` is what separates these from every other
+   chip in the portal: status chips are coloured by class and carry no style attribute,
+   so the Passed Due pill in rule 10 is untouched by this.
+   Anything unmapped falls back to the neutral card fill rather than to mud, so a tag
+   colour nobody has seen yet still renders as a clean pill.
+   rgb(241  rgb(103, 28, 53)   orange-red  -> crimson
+   orange   rgb(105, 31, 94)   CSS keyword -> magenta
+   rgb(221  rgb(73, 41, 97)    salmon      -> violet
+   rgb(229  rgb(27, 60, 97)    red         -> blue
+   rgb(232  rgb(53, 60, 77)    pink        -> slate
+   rgb(125  rgb(38, 89, 59)    green       -> green (kept)
+   rgb(114  rgb(30, 94, 91)    neon green  -> teal */
+html:not([data-br-dark="off"]) .MuiChip-root[style*="background-color"] {
+  background-color: rgb(41, 44, 56) !important;
+  box-shadow: none !important;
+  color: rgb(226, 232, 240) !important;
+}
+html:not([data-br-dark="off"]) .MuiChip-root[style*="background-color"][style*="rgb(241"] {
+  background-color: rgb(103, 28, 53) !important;
+}
+html:not([data-br-dark="off"]) .MuiChip-root[style*="background-color"][style*="orange"] {
+  background-color: rgb(105, 31, 94) !important;
+}
+html:not([data-br-dark="off"]) .MuiChip-root[style*="background-color"][style*="rgb(221"] {
+  background-color: rgb(73, 41, 97) !important;
+}
+html:not([data-br-dark="off"]) .MuiChip-root[style*="background-color"][style*="rgb(229"] {
+  background-color: rgb(27, 60, 97) !important;
+}
+html:not([data-br-dark="off"]) .MuiChip-root[style*="background-color"][style*="rgb(232"] {
+  background-color: rgb(53, 60, 77) !important;
+}
+html:not([data-br-dark="off"]) .MuiChip-root[style*="background-color"][style*="rgb(125"] {
+  background-color: rgb(38, 89, 59) !important;
+}
+html:not([data-br-dark="off"]) .MuiChip-root[style*="background-color"][style*="rgb(114"] {
+  background-color: rgb(30, 94, 91) !important;
+}
+
+
+/* --- 15. Warning / error alerts ---------------------------------------------
+   The UnPaid Subscriptions box, sitting directly above the success alert rule 12
+   handles. Rule 12 said warning and error would need their own hues rather than the
+   teal, and this is that.
+   Owner asked for alarming and quickly noticeable, so this is tuned LOUDER than
+   anything else in the file on purpose. rgb(103,32,30) is 1.39 against the page --
+   the highest fill contrast here, above the success box's 1.29 -- so when the two
+   stack the unpaid one wins the eye. The accent and icon are rgb(255,107,107),
+   5.85:1 against the page, which is a signal rather than a border.
+   The two boxes are only 1.08 apart in luminance, which is deliberate: they separate
+   by HUE, red against teal, so neither looks like a dimmer copy of the other. Reading
+   them apart never depends on which is brighter.
+   Error is included with warning. If it ever appears, red is already right for it,
+   and one shared rule beats discovering later that error was left to the engine.
+   The success box keeps teal in rule 12 -- these must never converge. */
+html:not([data-br-dark="off"]) .MuiAlert-standardWarning,
+html:not([data-br-dark="off"]) .MuiAlert-standardError {
+  background-color: rgb(103, 32, 30) !important;
+  border-left: 4px solid rgb(255, 107, 107) !important;
+  border-radius: 4px !important;
+}
+html:not([data-br-dark="off"]) .MuiAlert-standardWarning,
+html:not([data-br-dark="off"]) .MuiAlert-standardWarning .MuiAlert-message,
+html:not([data-br-dark="off"]) .MuiAlert-standardWarning .MuiAlertTitle-root,
+html:not([data-br-dark="off"]) .MuiAlert-standardWarning li,
+html:not([data-br-dark="off"]) .MuiAlert-standardError,
+html:not([data-br-dark="off"]) .MuiAlert-standardError .MuiAlert-message,
+html:not([data-br-dark="off"]) .MuiAlert-standardError .MuiAlertTitle-root,
+html:not([data-br-dark="off"]) .MuiAlert-standardError li {
+  color: rgb(255, 236, 234) !important;
+}
+html:not([data-br-dark="off"]) .MuiAlert-standardWarning .MuiAlert-icon,
+html:not([data-br-dark="off"]) .MuiAlert-standardError .MuiAlert-icon {
+  color: rgb(255, 107, 107) !important;
+}
+
 /* --- Still open -------------------------------------------------------------
    [ ] react-select menus -- the QA walk opened one but its portal markup wasn't
        captured. If those still flash light, add their container to rule 2.
-   [ ] Notes category chips all pass AA but converged to muddy brown-olive, so
-       they no longer distinguish at a glance. Rule 6 darkens them further.
+   [x] Notes category chips -- CLOSED by rule 13. They were never a contrast failure;
+       five of the seven site colours were warm pastels that all invert to the same
+       brown-olive. Hues are now hand-assigned.
 
    Closed by the QA walk, do not re-investigate:
    - Iframes: all 3 are Stripe telemetry, 1519x1 and 0x0. No chat widget exists.

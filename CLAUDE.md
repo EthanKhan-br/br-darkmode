@@ -106,6 +106,94 @@ colors from the site's own values.
 
 ---
 
+## Task tables (inspected 2026-08-19 — don't re-derive)
+
+The Dashboard's Daily / Soft / System Tasks tables are the one place with
+**author-written test ids**, and they are the stable hook rules 9-10 are built on:
+
+- `tr[data-testid="task-<id>-row"]` — 21 real rows across the three tables.
+- `tr[data-testid="task-<id>-details-row"]` — the collapsed expansion row, 1px tall,
+  `colspan=7`. Excluded from the hover rule so it keeps matching the portal's own
+  behaviour. Any `[data-testid$="-row"]` selector catches both, so filter it out.
+- `data-testid="due-date"` is the **filter input** at the top of the page, NOT the
+  column cell. Don't reach for it expecting a cell.
+- The overdue date is a **bare text node** sitting directly in the `<td>` — no span,
+  no class, unselectable. Its color has to be set on the cell, via
+  `td.MuiTableCell-body:has(.MuiChip-root)`. "Today" cells contain no chip, so
+  `:has()` splits overdue from non-overdue with zero false positives across all 14.
+- All 14 `.MuiChip-root` on the Dashboard are Passed Due chips, all inside task rows.
+  Elsewhere in the portal chips are status pills — which is why rule 10 keeps the
+  `tr[data-testid^="task-"]` ancestor instead of styling chips globally.
+- **Rule 6 caused the murky pill, not the engine.** Its 40% black overlay crushed the
+  chip's own rgb(183,10,10) to ~rgb(110,6,6), 1.25:1 against the row. It can't be
+  softened globally: at 30% the worst status chip elsewhere drops to 3.89:1, under AA.
+- The olive hover is also not an engine fault. The portal declares
+  `background-color: #fbffb3` itself; the engine inverted that yellow faithfully.
+
+`jss` numbers renumbered *mid-session* (chip jss163 → jss176, row jss167 → jss180)
+between two inspections minutes apart on an unchanged portal. That's the hard rule
+demonstrating itself.
+
+## Notes panel (inspected 2026-08-19 — don't re-derive)
+
+The order-detail Notes panel (`/company-order/<id>`) has **exactly two** note
+categories, not the six the chips imply, and the site sets each card's color as an
+**inline style** on `div[data-testid="note-row"]`:
+
+- `background-color: rgb(255, 203, 128)` — ordinary notes (23 of 25 on the order walked)
+- `background-color: rgb(175, 225, 175)` — status-change notes (2 of 25)
+
+Rule 11 hooks those with `[style*="rgb(255"]` / `[style*="rgb(175"]` — the comma-free
+prefix, both so it survives the site nudging its palette and because
+`verify-fixes.js` splits selectors on commas. Dark Reader overrides the inline color
+with its own `!important` rule rather than rewriting the attribute, which is why
+matching on `[style*=]` still works.
+
+Card structure: three `<p>` siblings — two header lines (12.8px/300) then the body
+(15px/400). Rule 11 pins all three with `:nth-of-type(-n+2)` for the header tier.
+**Pin the text, always.** The same header measured `rgb(215,219,225)` in one browser
+and rendered a dim tan in another minutes later, because the engine derives text color
+from the *original* pale fill and the result depends on when it processed the node.
+
+Anything left to the engine here is non-deterministic across page loads. That is the
+single most useful fact in this section.
+
+
+### The rest of the colour-carrying components (rules 12-15)
+
+Everything below was flattened or muddied by the engine and is now owned outright.
+The pattern is the same each time: **the site's own hue is not worth preserving, and
+the engine's output is not deterministic.** Pin both fill and text or it will move.
+
+| component | hook | rule |
+|---|---|---|
+| Notes category filters | `[data-testid="<cat>-checkbox"] + .MuiFormControlLabel-label p` | 13 |
+| Company tag pills | `.MuiChip-root[style*="background-color"]` + colour prefix | 14 |
+| Active Subscriptions | `.MuiAlert-standardSuccess` | 12 |
+| UnPaid Subscriptions | `.MuiAlert-standardWarning` (+ `-standardError`) | 15 |
+
+- Filter categories are `company`, `client`, `order`, `general`, `taxorder`, `calls`,
+  `sales_rep`. `data-testid="due-date"` is a **filter input**, not a cell — a trap I
+  already fell into once.
+- `.MuiChip-root[style*="background-color"]` is what separates the company tags from
+  every other chip: status chips are coloured by class and carry no `style` attribute,
+  so rule 10's Passed Due pill is untouched. Four tags (Ein Registrar, Member, Manager,
+  Registered Agent) have no inline colour and keep the neutral fallback.
+- Chip and tag palettes are shared deliberately — rule 14 maps onto rule 13's seven
+  validated colours rather than inventing new ones.
+
+**Why hues, not contrast.** Warm colours cannot be dark. Yellow, orange and peach reach
+low lightness only by becoming brown, so any pale-warm surface the engine inverts lands
+in the same mud regardless of saturation. Every colour problem in this panel was a
+*convergence* problem, not a contrast problem — the numbers passed AA throughout. When
+categories stop being distinguishable, measure pairwise RGB distance, which
+`verify-fixes.js` now does. A contrast ratio is blind to it.
+
+**Cool hues have no such failure mode**, which is why the palette is blue / teal /
+violet / slate / magenta / crimson / green. Saturated dark blue is the one to avoid:
+at card lightness it lands at 1.00 against the page, because the page is itself dark
+blue.
+
 ## Sidebar structure (inspected 2026-08-18 — don't re-derive)
 
 ```
@@ -160,6 +248,16 @@ as a white block in the dark sidebar. Owner rejected on looks. The logo is now
 intentionally unstyled; WCAG exempts logotypes from contrast requirements. A
 white-knockout SVG is the only remaining option and needs the real artwork.
 
+**A dark amber notes card.** Three attempts, all rejected on looks: `rgb(54,44,30)`
+(hsl 29% sat, read as sludge), `rgb(63,45,13)` (65% sat, still wrong), and removing the
+fill entirely (owner: "that is not what I want"). Yellow and orange reach low lightness
+*only* by becoming brown — it is the hue, not the tuning, so no amount of saturation
+work fixes it. The categories were re-hued instead: slate-indigo + teal, chosen 2026-08-19
+over violet+teal, plum+cyan and blue-violet+emerald. Colour the exception, not the rule —
+23 of 25 cards are ordinary notes, so the default stays near-neutral.
+Saturated dark blue is also out: at card lightness it lands at 1.00 against the page,
+because the portal background is itself a dark blue.
+
 **`DarkReader.setFetchMethod` + background service worker** to theme cross-origin
 stylesheets. Owner explicitly declined — it needs a service worker *and*
 `cdn.tiny.cloud` in `host_permissions`. Consequence accepted: the TinyMCE rich-text
@@ -187,11 +285,45 @@ the values still appear in the CSS, and that every selector carries the Off guar
 Bump `manifest.json` version on every functional change — it's the only way to confirm
 Chrome re-read the folder.
 
-**QA loop.** I cannot log into the portal. Claude in Chrome can, and does the visual
-walk; `tools/chrome-qa-brief.md` is the brief to paste into it. It reports defects with
-structural selectors and computed colors, I write the rules here. Its last report was
-high quality — programmatic WCAG ratios, and it correctly refused to run a remote
-script on a page holding live client PII.
+**Extension CSS outranks anything you inject into the page.** Chrome applies
+manifest-injected content-script CSS at **user origin**, and a user-origin `!important`
+beats an author-origin `!important` no matter how specific the author rule is. So
+testing a candidate rule by appending a `<style>` to the page **cannot** override
+`fixes.css` — the test silently fails and looks like a broken selector. This cost a
+round: an injected rule 14 appeared to do nothing while being in the sheet, matching the
+element, and carrying `!important` at higher specificity than the rule it lost to.
+Injection is still a valid way to test a rule that competes with nothing but Dark
+Reader. To test anything that competes with our own CSS, edit `fixes.css` and restart
+the browser.
+
+
+**QA loop — I can now drive the portal myself.** A `puppeteer` MCP server is registered
+at user scope (`C:\Users\PC\.claude.json`). Launch it headful with the unpacked
+extension loaded, via `launchOptions` on `puppeteer_navigate`:
+
+```json
+{ "headless": false, "defaultViewport": null,
+  "args": ["--disable-extensions-except=c:\\Users\\PC\\Downloads\\br-darkmode",
+           "--load-extension=c:\\Users\\PC\\Downloads\\br-darkmode"] }
+```
+
+Headful is required — Chrome will not load an unpacked extension headless, and without
+it the portal renders light and tells you nothing. **Changing `launchOptions` restarts
+the browser, which is how the extension reloads after a CSS edit — and it drops the
+portal session every time.** The owner has to sign in again by hand. Batch edits before
+restarting; a login per iteration is the main cost of this loop.
+
+Rules for driving it, set by the owner 2026-08-19 and not negotiable: **read-only.**
+Navigate, hover, screenshot, read computed styles. No clicks, fills or selects — no
+Mark As Read, no Complete, no sort toggles, no pagination, and do not click Log In even
+with credentials prefilled. It is live production data shared with coworkers, and any
+state change looks to the whole team like the owner did it. Hover is safe: it is pure
+CSS with no class toggle, so it fires no request and persists nothing.
+Return class names and colours from `evaluate`, never cell text — that keeps client PII
+out of the transcript.
+
+`tools/chrome-qa-brief.md` and Claude in Chrome still work and need no login of mine,
+but every round through them costs fidelity in translation. Prefer driving directly.
 
 **Commits:** `git -c user.name="EthanKhan-br" -c user.email="naveedanas87@gmail.com"`.
 The repo has no committed identity.
@@ -200,15 +332,25 @@ The repo has no committed identity.
 
 ## Open items
 
-- **Sidebar active-page marker.** Rule 8 in `fixes.css` is a *union of guesses* at
-  the class the portal uses (`Mui-selected` / `aria-current` / `.active` / `.selected`).
-  If the current-page pill still does not show, find the real marker with
-  `$('ul > div[role=button]').find(e => e.className || e.getAttribute('aria-current'))`
-  and add it. Never a hashed emotion class.
+- ~~**Sidebar active-page marker.**~~ Stale as written — rule 8 stopped being a union
+  of class guesses at v1.5.0. `content.js` tags the row at runtime with
+  `[data-br-active]` by relative structure and rule 8 styles that attribute. Left here
+  only so the old wording is not mistaken for current.
 - **react-select menus.** The QA walk opened one but didn't capture its portal markup.
   If those still flash light on mount, add their container to rule 2 in `fixes.css`.
-- **Notes category chips** (Company / Client / Order / Tax Order / Calls / Sales Rep)
-  all pass AA but converged to muddy brown-olive, so they no longer distinguish at a
-  glance. Rule 6 darkens them further. Cosmetic; needs hand-assigned hues.
+- ~~**Notes category chips.**~~ Closed 2026-08-19 by rule 13. The diagnosis in this
+  item was wrong in an instructive way: it read as a contrast problem, and every chip
+  passed AA the whole time. The real fault was that five of the seven site colours are
+  warm pastels, and warm pastels all invert to the same brown-olive — they converged.
+  Hues are now hand-assigned by search over seven hue lanes that skip 30-70deg.
+  **Generalise from this:** on this portal a category that stops being distinguishable
+  is almost never a contrast bug. Check whether the source colours share a hue family
+  first, and measure pairwise separation, which no contrast ratio will show you.
+- **Rule 15 is reasoned, not measured.** The UnPaid Subscriptions alert was written
+  against `MuiAlert-standardWarning` without being seen: `/company-tax-order/4326`
+  redirects to the dashboard, so I never found the real route. The class is MUI's own
+  API and `standardSuccess` is confirmed on the same portal, so it should hold — but
+  it is the one rule in the file no measurement backs. Verify it, and record the route,
+  next time that page is open.
 - **Pages never walked:** none — the walk covered all 15. Re-walk after any major
   portal deploy, since MUI hashes and layouts move.
