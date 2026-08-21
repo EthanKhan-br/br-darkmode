@@ -756,15 +756,9 @@ html:not([data-br-dark="off"]) .MuiLinearProgress-colorPrimary {
    so they need their own hooks -- rule 14 matches .MuiChip-root and rule 16 matches
    the `background:` shorthand inside a table cell; none of these are either.
 
-   The two table-row tints are the important one, and they are a CONVERGENCE failure,
-   not a contrast one -- which is why they never showed up in a contrast audit. The
-   site tints rows lavender rgb(203,195,227) and pale blue rgb(195,220,237); the engine
-   lands them on rgb(48,53,70) and rgb(46,51,66), FIVE rgb apart. Two different row
-   states rendering as the same grey is the notes-panel bug again in a new place.
-   Replaced with a violet and a blue 37 rgb apart, both held at 1.14 and 1.20 against
-   the untinted row -- deliberately as quiet as rule 9's hover, because these are
-   full-width bands and a row tint that shouts makes the table unreadable. The
-   separation is carried by hue, not by lightness, which is the whole point.
+   The row tints that used to live here moved to rule 25, where the full five-colour
+   set is handled and the selector is corrected -- styling the tr does nothing, because
+   the td cells paint over it.
 
    The green box is the order's status banner ("Submitted to Government Agency"),
    rgb(1,167,4) inline, engine output rgb(11,133,13) at 3.42:1 -- the worst number
@@ -776,27 +770,11 @@ html:not([data-br-dark="off"]) div[style*="rgb(1, 167, 4)"] {
   background-color: rgb(38, 89, 59) !important;
   color: rgb(226, 232, 240) !important;
 }
-html:not([data-br-dark="off"]) tr[style*="rgb(203, 195, 227)"] {
-  background: rgb(60, 40, 78) !important;
-}
-html:not([data-br-dark="off"]) tr[style*="rgb(195, 220, 237)"] {
-  background: rgb(26, 54, 82) !important;
-}
 html:not([data-br-dark="off"]) div[style*="rgb(189, 213, 255)"] {
   background-color: rgb(34, 46, 68) !important;
 }
-/* The same pale blue does TWO jobs on /company-order/<id>: it fills the four header
-   form fields (Order Status, Order Type, Payment Status, Bank Type), where a quiet
-   panel is right, and it fills a status box inside a table cell, where a quiet panel
-   reads as nothing at all. Scoped to the cell the way rule 16 is, it gets the palette
-   blue instead -- 1.44 against the page, the same presence the stage boxes have.
-   Blue and not green deliberately: this is the site's own blue, and mapping it to a
-   meaning on the strength of one observed value is how rule 14's grey fallback keeps
-   biting. Blue asserts nothing beyond what the site already said. */
-html:not([data-br-dark="off"]) tbody td div[style*="rgb(189, 213, 255)"] {
-  background-color: rgb(27, 60, 97) !important;
-  color: rgb(226, 232, 240) !important;
-}
+/* The row tints and the in-cell status boxes moved to rules 25 and 24 on 2026-08-20.
+   Both were WRONG here and the row tints never rendered at all -- see rule 25. */
 
 
 /* --- 19. Secondary-themed badges, chips and the tab indicator ----------------
@@ -815,7 +793,16 @@ html:not([data-br-dark="off"]) tbody td div[style*="rgb(189, 213, 255)"] {
    legible and a 6px dot stays visible. Secondary and error landing on the same red is
    intended: on this portal both mean "there is something here", and inventing a second
    alert colour to distinguish two things that never appear together is noise.
-   colorPrimary badges are deliberately NOT touched -- those are already blue.
+
+   WIDENED 2026-08-20 from .MuiBadge-colorSecondary/-colorError to .MuiBadge-badge with
+   colorPrimary excluded. The dashboard's Chat Messages count carries NEITHER colour
+   modifier -- just `MuiBadge-badge MuiBadge-anchorOriginTopRightRectangle` -- and was
+   rust rgb(152,53,19) straight through the old selector. Naming the modifiers was the
+   mistake: MUI only adds one when the component asks for a colour, so the default case
+   is exactly the one that falls through. Excluding colorPrimary keeps genuinely blue
+   badges blue, which is the only case that should not be red.
+   Note this LOWERS the measured contrast, 5.29:1 to 4.98:1. The rust was never a
+   contrast failure; it was the wrong hue, same as the section bars in rule 17.
 
    The chip takes rule 5's button blue, and needs box-shadow:none for the same reason
    rule 10's chip does: rule 6 paints 40% black over every .MuiChip-root. It also
@@ -824,8 +811,7 @@ html:not([data-br-dark="off"]) tbody td div[style*="rgb(189, 213, 255)"] {
    The tab indicator is decoration with no text, so it was never a contrast failure --
    it is here only because it was sitting on rgb(34,110,158), the raw engine blue rule
    5 replaces, and one stray shade of blue under the tabs reads as a mistake. */
-html:not([data-br-dark="off"]) .MuiBadge-colorSecondary,
-html:not([data-br-dark="off"]) .MuiBadge-colorError {
+html:not([data-br-dark="off"]) .MuiBadge-badge:not(.MuiBadge-colorPrimary) {
   background-color: rgb(211, 47, 47) !important;
   color: rgb(255, 255, 255) !important;
 }
@@ -922,6 +908,163 @@ html:not([data-br-dark="off"]) .MuiButton-contained[data-br-alt]:not(.Mui-disabl
 }
 html:not([data-br-dark="off"]) .MuiButton-contained[data-br-alt]:not(.Mui-disabled):hover {
   background-color: rgb(20, 64, 62) !important;
+}
+
+/* --- 23. The notes toggle buttons -------------------------------------------
+   Two floating buttons on the dashboard, top-left over the sidebar and top-right over
+   the content, both carrying data-testid="toggle-notes-button" -- author-written, so
+   no generated class and no runtime tagging is needed here.
+   The site gives the two copies different colours, and the engine mangles them in
+   opposite directions:
+     top-right  rgb(253, 255, 221) pale yellow  ->  rgb(59, 62, 10)   dark olive
+     top-left   rgb(60, 159, 223)  bright blue  ->  rgb(34, 110, 158) raw engine blue
+   The olive is the pale-yellow failure this file has now hit three times (rule 9's task
+   hover, rule 13's category chips, and here): yellow reaches low lightness ONLY by
+   becoming brown, so there is no tuning that saves it -- the hue has to go. The blue one
+   is the value rule 5 replaces everywhere else and was simply out of reach, because
+   rule 5 hooks .MuiButton-contained and these are MuiIconButton-root.
+   Both land on rule 5's button blue. They are the same control, so they should look the
+   same; the site colouring one of them yellow was not carrying a state that survives
+   inversion anyway.
+   The olive copy also renders its icon at 54% alpha, which is MUI's default IconButton
+   colour showing through -- pinned to full so the two icons match.
+   No new values, so no new checks: rgb(26,92,134) under rgb(214,218,225) is already
+   asserted as 'primary button' at 5.13:1, comfortably past the 3:1 an icon needs.
+   This LOWERS the measured contrast on the olive one, 8.04:1 to 5.13:1. It was never a
+   contrast failure -- it passed AA the whole time while looking like mud. */
+html:not([data-br-dark="off"]) [data-testid="toggle-notes-button"] {
+  background-color: rgb(26, 92, 134) !important;
+}
+html:not([data-br-dark="off"]) [data-testid="toggle-notes-button"],
+html:not([data-br-dark="off"]) [data-testid="toggle-notes-button"] svg {
+  color: rgb(214, 218, 225) !important;
+}
+html:not([data-br-dark="off"]) [data-testid="toggle-notes-button"]:hover {
+  background-color: rgb(18, 66, 96) !important;
+}
+
+/* --- 24. Order status boxes (/company-order) --------------------------------
+   The Status column. Same shape as rule 16's tax stages -- a classless div carrying the
+   site's colour inline -- but a DIFFERENT failure, and a worse one.
+
+   THESE GO INVISIBLE, NOT MUDDY. Dark Reader never processes these nodes: they carry no
+   --darkreader-inline-bgcolor, so its blanket fallback
+     html, body, body :not(iframe) { background: var(--darkreader-background-ffffff) }
+   paints them the PAGE COLOUR and the box disappears entirely. Six of 25 status boxes
+   were rendering at exactly rgb(30,32,41) when this was written. Our CSS is injected at
+   user origin, so it beats that !important -- which is the only reason a fix is possible
+   from here at all.
+
+   SO THE BASE RULE IS THE POINT, not the mappings. The status name and colour come from
+   the API -- they are not in the JS bundle (searched: zero hits for every status name and
+   every hex) and not reachable in the app's React tree, and enumerating them would need
+   pagination clicks that the read-only rule forbids. So the complete list CANNOT be had
+   the way rule 16's stages were had. The base guarantees any status we have never seen
+   renders neutral instead of invisible; the mappings are then a bonus on top. Same idea
+   as rule 14's fallback, except here the failure it prevents is total, not cosmetic.
+
+   The base is scoped to tbody td, which is what keeps it off everything else. Verified on
+   /company-order: 25 matches, exactly one per row, zero false positives -- every match
+   carries border-radius, i.e. is a status box. It cannot reach rule 16's stage boxes
+   (those use the `background:` SHORTHAND, a different attribute string) and it loses to
+   rule 14's chips on specificity, which is why chips in table cells keep their own map.
+
+     rgb(189, 213, 255)  the DEFAULT, 17 of 25 and five different statuses -- Order
+                         Initiated, Order Pending, Information Needed, Process pending
+                         clarification, Filed By State. Kept as one blue bucket: the site
+                         means them as one, and splitting them would invent a distinction.
+     rgb(1, 167, 4)      Submitted to Government Agency  -> green
+     rgb(65, 251, 40)    Ready to File                   -> green
+     rgb(230, 175, 55)   Process Pending                 -> violet, parked
+
+   The hues are rule 16's vocabulary on purpose -- violet parked, blue waiting, green
+   settled -- so the two order tables read the same way.
+   Ready to File and Submitted to Government Agency SHARE the green by the owner's
+   decision (2026-08-20). It was magenta-for-needs-attention first, on the reasoning that
+   Ready to File is work waiting on you. The owner wants the two read as one "this order
+   is on track" state instead, and grouping is what rules 14 and 16 do everywhere else --
+   colour answers "does this need me?", the label carries the specifics. */
+html:not([data-br-dark="off"]) tbody td div[style*="background-color"] {
+  background-color: rgb(41, 44, 56) !important;
+  color: rgb(226, 232, 240) !important;
+}
+html:not([data-br-dark="off"]) tbody td div[style*="rgb(189, 213, 255)"] {
+  background-color: rgb(27, 60, 97) !important;
+}
+html:not([data-br-dark="off"]) tbody td div[style*="rgb(1, 167, 4)"] {
+  background-color: rgb(38, 89, 59) !important;
+}
+html:not([data-br-dark="off"]) tbody td div[style*="rgb(65, 251, 40)"] {
+  background-color: rgb(38, 89, 59) !important;
+}
+html:not([data-br-dark="off"]) tbody td div[style*="rgb(230, 175, 55)"] {
+  background-color: rgb(73, 41, 97) !important;
+}
+
+
+/* --- 25. Tinted table rows --------------------------------------------------
+   THE SELECTOR HAS TO BE `tr[...] > td`, NOT `tr[...]`. This shipped wrong in rule 18
+   and never rendered: the tr background IS painted, but Dark Reader leaves the td cells
+   opaque at the page colour (the same unprocessed-node fallback rule 24 describes), and
+   the cells paint over the row. Measured both ways before fixing -- tr alone gives an
+   invisible row, tr > td paints all ten cells.
+
+   The five colours come from one hard-coded constants block in the JS bundle --
+     _ = "#EA987A"   w = "#CBC3E3"   j = "#db635b"   S = "#c3dced"   k = "#ff00009c"
+   THREE are confirmed row tints seen on a page: #CBC3E3 and #c3dced on the order detail
+   page, #db635b here. The other two are INFERRED from sharing that block and have not
+   been observed on any page walked -- they may well colour something else entirely.
+   Mapping them anyway costs nothing: the selector only matches a tr carrying that inline
+   colour, so if the guess is wrong the rule simply never fires. And if the guess is
+   right, the row is visible the first time it appears instead of invisible -- which is
+   what happened to #db635b, and to six status boxes in rule 24.
+
+   URGENT LEADS THE LADDER RATHER THAN JOINING IT. The owner identified the salmon rows
+   as urgent orders and asked for prominent, so it sits at 1.56 against the row where the
+   other four are held between 1.17 and 1.25 -- a 1.25x gap that verify-fixes.js asserts,
+   so no later tint can quietly catch up with it.
+   TUNED DOWN once: the first version was rgb(156,17,22), hsl(358,80%,34%) at 1.85, and
+   the owner said it felt too bright. Saturation was doing as much of that as luminance,
+   so both came down -- 80% to 58% sat, 1.85 to 1.56. Rather than let the gap close, the
+   two quiet tints that had drifted loud came down with it (teal 1.38 -> 1.17, magenta
+   1.45 -> 1.20). Calming the whole set is the honest fix; dropping the assertion so one
+   colour could sit closer to the others would have been the dishonest one.
+   The blue channel is held at or above the green one, which is what keeps this a true
+   crimson instead of drifting into the rust family the owner has rejected twice. A
+   search of the same lane without that constraint returned rgb(130,41,23) -- that rust.
+   Rule 15's alarm red was tried first and is too quiet HERE -- 1.28 against a row, below
+   even the magenta was. A colour tuned to shout against the PAGE does not automatically
+   shout against a table ROW.
+
+   The other four stay quiet on purpose: they are full-width bands, and a table where
+   every other row shouts is a table you stop reading. They separate by hue, worst pair
+   37 rgb apart.
+   Text is pinned on all five. The engine's own value gives 5.98:1 on the urgent red,
+   which passes -- but rule 11 is the standing lesson that engine text colour is not
+   deterministic across loads, so it is not left to chance.
+   A status box sitting inside an urgent row stays legible: the tightest is the green one
+   at 1.03 in luminance, but 143 rgb apart in hue, so it reads as a box regardless. */
+html:not([data-br-dark="off"]) tr[style*="rgb(219, 99, 91)"] > td {
+  background-color: rgb(125, 33, 36) !important;
+}
+html:not([data-br-dark="off"]) tr[style*="rgb(234, 152, 122)"] > td {
+  background-color: rgb(12, 55, 40) !important;
+}
+html:not([data-br-dark="off"]) tr[style*="rgba(255, 0, 0"] > td {
+  background-color: rgb(93, 20, 56) !important;
+}
+html:not([data-br-dark="off"]) tr[style*="rgb(203, 195, 227)"] > td {
+  background-color: rgb(60, 40, 78) !important;
+}
+html:not([data-br-dark="off"]) tr[style*="rgb(195, 220, 237)"] > td {
+  background-color: rgb(26, 54, 82) !important;
+}
+html:not([data-br-dark="off"]) tr[style*="rgb(219, 99, 91)"] > td,
+html:not([data-br-dark="off"]) tr[style*="rgb(234, 152, 122)"] > td,
+html:not([data-br-dark="off"]) tr[style*="rgba(255, 0, 0"] > td,
+html:not([data-br-dark="off"]) tr[style*="rgb(203, 195, 227)"] > td,
+html:not([data-br-dark="off"]) tr[style*="rgb(195, 220, 237)"] > td {
+  color: rgb(226, 232, 240) !important;
 }
 
 /* --- Still open -------------------------------------------------------------

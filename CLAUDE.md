@@ -339,6 +339,80 @@ Verified live on `/company-order/454991`: 18 buttons, all claimed by a rule, maj
   direction for a state change is usually down.
 
 
+### Dashboard crawl (2026-08-20, against v1.20.0)
+
+Clean apart from two hue faults — **zero unthemed light surfaces**, no leftover
+inline-coloured elements, and the only text below AA was two react-select placeholders
+at 4.36:1 (the emotion-hash ones rule 21 deliberately leaves).
+
+- **`data-testid="toggle-notes-button"`** is an author-written hook on two floating
+  buttons, top-left over the sidebar and top-right over the content. The site colours
+  the two copies differently — pale yellow `rgb(253,255,221)` and bright blue
+  `rgb(60,159,223)` — and the engine sent them to olive `rgb(59,62,10)` and the raw
+  `rgb(34,110,158)`. Rule 23 puts both on the theme blue. **Pale yellow has now failed
+  three times** (rules 9, 13, 23); treat any pale yellow the site declares as a hue that
+  must be replaced, never tuned.
+- **Rule 19's badge hook was wrong in an instructive way.** Naming
+  `.MuiBadge-colorSecondary`/`-colorError` misses the *default* case, because MUI only
+  adds a colour modifier when the component asks for one. The dashboard's Chat Messages
+  count had neither and stayed rust. Now `.MuiBadge-badge:not(.MuiBadge-colorPrimary)`.
+  **Generalise: when hooking a MUI variant class, check what the unmodified default
+  looks like** — it is the case most likely to fall through.
+- Both fixes **lower** measured contrast (8.04→5.13 and 5.29→4.98) and both look far
+  better. That is now the rule on this portal rather than the exception: a colour
+  complaint here is almost never a contrast number.
+- The 102 row action buttons sit at 1.07:1 against the table. The site declares
+  `rgb(236,236,238)` with `border:none`, which is **1.18:1 in light mode** — so the
+  engine roughly halved it rather than breaking it. Offered and not taken (2026-08-20);
+  `rgb(44,48,61)` restores the light-mode figure exactly if it comes up again.
+- The big orange stat numbers `rgb(235,124,87)` measure 5.84:1 at 54px and need 3:1.
+  Left alone deliberately — they read as a deliberate second metric beside the blue.
+
+### Company orders (`/company-order`, inspected 2026-08-20) — rules 24, 25
+
+**The failure mode here is INVISIBLE, not muddy — and it will recur.** Dark Reader does
+not process every node. The ones it misses carry no `--darkreader-inline-bgcolor`, and
+its blanket fallback
+
+    html, body, body :not(iframe) { background: var(--darkreader-background-ffffff) }
+
+then paints them the page colour, overriding the site's own inline style. Six of 25
+status boxes and five of 25 rows were rendering at exactly `rgb(30,32,41)`. Our CSS is
+user-origin so it still wins, which is the only reason this is fixable from here.
+**When something is missing rather than ugly, check for that fallback before anything
+else.**
+
+- **`tr[…]` does nothing; you need `tr[…] > td`.** The row background IS painted, but
+  the unprocessed `td` cells stay opaque at the page colour and cover it. Rule 18
+  shipped the wrong form and **never rendered** — corrected into rule 25. Measured both
+  ways: tr alone gives an invisible row, `tr > td` paints all ten cells.
+- **The status list cannot be enumerated, so the BASE RULE is the fix.** Names and
+  colours come from the API (the React prop holds `#bdd5ff`), are absent from the JS
+  bundle — zero hits for every status name and every hex — and are not reachable in the
+  React tree from either page. Pagination would need clicks the read-only rule forbids.
+  So `tbody td div[style*="background-color"]` gets a neutral fill and any unseen status
+  renders neutral instead of vanishing. Verified: 25 matches, one per row, zero false
+  positives (every match carries `border-radius`). It cannot reach rule 16's stage boxes
+  (`background:` shorthand, different attribute string) and loses to rule 14's chips on
+  specificity. **Don't try to complete the mapping — the base is the point.**
+- **Row-tint colours ARE gettable**: five hard-coded constants in one bundle block,
+  `_ = "#EA987A"  w = "#CBC3E3"  j = "#db635b"  S = "#c3dced"  k = "#ff00009c"`. Three
+  are confirmed on a page; `#EA987A` and `#ff00009c` are inferred from sharing the block
+  and may colour something else — harmless, since the selector only fires on a `tr`
+  carrying that colour.
+- `rgb(189,213,255)` is the DEFAULT status colour — 17 of 25, five different statuses.
+  Kept as one blue bucket deliberately; splitting it would invent a distinction the site
+  does not make. Owner also grouped **Ready to File with Submitted to Government Agency**
+  on green (2026-08-20).
+- **Urgent rows: `rgb(125,33,36)` at 1.56, the others held 1.17–1.25.** Two lessons.
+  Rule 15's alarm red — tuned to shout against the *page* — measures only 1.28 against a
+  table *row*; **a colour that is loud on one surface is not loud on another, re-measure
+  it.** And the first attempt at 1.85/80% saturation was rejected as too bright, so
+  saturation came down with luminance; the two quiet tints that had drifted loud came
+  down too, rather than dropping the assertion that urgent leads by 1.2x.
+  `verify-fixes.js` asserts blue >= green on that colour, because a search of the same
+  lane without it returns `rgb(130,41,23)` — the rust family the owner has rejected twice.
+
 ## Sidebar structure (inspected 2026-08-18 — don't re-derive)
 
 ```

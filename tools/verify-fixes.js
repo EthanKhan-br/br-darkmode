@@ -132,13 +132,41 @@ check('section rule vs page', ratio([26, 92, 134], PAGE), 1.8);
 // Rule 18. The two row tints are a CONVERGENCE check, not a contrast one: the engine
 // landed them 5 rgb apart, which no contrast ratio would have flagged. Both stay as
 // quiet as the task hover -- they are full-width bands.
-const ROW_VIOLET = [60, 40, 78], ROW_BLUE = [26, 54, 82];
-check('row tint violet vs row', ratio(ROW_VIOLET, TABLE), 1.1);
-check('row tint blue vs row', ratio(ROW_BLUE, TABLE), 1.1);
-check('row tint violet text', ratio(FG, ROW_VIOLET), 4.5);
-check('row tint blue text', ratio(FG, ROW_BLUE), 4.5);
-line(dist(ROW_VIOLET, ROW_BLUE) >= 30, 'row tints stay distinct',
-     dist(ROW_VIOLET, ROW_BLUE).toFixed(0) + ' rgb apart (need 30)');
+// Rule 25. Five row tints, the complete set -- they are hard-coded constants in the
+// site's own bundle, so there is no sixth. URGENT is checked differently from the other
+// four ON PURPOSE: the owner asked for it to be prominent, so it has to TOP the ladder,
+// not merely clear a floor. The others must stay quiet -- a table where every other row
+// shouts is a table nobody reads -- so they are capped as well as floored.
+const ROW_VIOLET = [60, 40, 78], ROW_BLUE = [26, 54, 82], ROW_TEAL = [12, 55, 40],
+      ROW_MAGENTA = [93, 20, 56], ROW_URGENT = [125, 33, 36];
+const QUIET = [ROW_VIOLET, ROW_BLUE, ROW_TEAL, ROW_MAGENTA];
+const TINTS = [...QUIET, ROW_URGENT];
+check('quiet row tints visible', Math.min(...QUIET.map((c) => ratio(c, TABLE))), 1.1);
+line(Math.max(...QUIET.map((c) => ratio(c, TABLE))) <= 1.3, 'quiet row tints stay quiet',
+     Math.max(...QUIET.map((c) => ratio(c, TABLE))).toFixed(2) + ' loudest (max 1.3)');
+check('urgent row is prominent', ratio(ROW_URGENT, TABLE), 1.5);
+line(ratio(ROW_URGENT, TABLE) > Math.max(...QUIET.map((c) => ratio(c, TABLE))) * 1.2,
+     'urgent tops the ladder',
+     ratio(ROW_URGENT, TABLE).toFixed(2) + ' vs ' + Math.max(...QUIET.map((c) => ratio(c, TABLE))).toFixed(2) + ' next (need 1.2x)');
+// A rust urgent row would be rejected on sight -- holding blue at or above green is what
+// keeps this a crimson. The search that skipped this constraint returned rgb(130,41,23).
+line(ROW_URGENT[2] >= ROW_URGENT[1], 'urgent is crimson not rust',
+     'b=' + ROW_URGENT[2] + ' >= g=' + ROW_URGENT[1]);
+check('row tint text', Math.min(...TINTS.map((c) => ratio([226, 232, 240], c))), 4.5);
+line(Math.min(...TINTS.flatMap((a, i) => TINTS.slice(i + 1).map((b) => dist(a, b)))) >= 30,
+     'row tints stay distinct',
+     Math.min(...TINTS.flatMap((a, i) => TINTS.slice(i + 1).map((b) => dist(a, b)))).toFixed(0) + ' rgb worst pair (need 30)');
+
+// Rule 24. The base is the load-bearing part: these boxes go INVISIBLE, not muddy, when
+// unstyled, and the status list cannot be enumerated (API-side, absent from the bundle).
+// So the check that matters is that the neutral fallback is visible on its own.
+const BOX_BASE = [41, 44, 56];
+const BOXES = [BOX_BASE, [27, 60, 97], [38, 89, 59], [73, 41, 97]];
+check('unmapped status box visible', ratio(BOX_BASE, TABLE), 1.05);
+check('status box label', Math.min(...BOXES.map((c) => ratio([226, 232, 240], c))), 4.5);
+// A box has to keep reading as a box when it lands inside the urgent red row.
+line(Math.min(...BOXES.map((c) => dist(c, ROW_URGENT))) >= 60, 'status box on urgent row',
+     Math.min(...BOXES.map((c) => dist(c, ROW_URGENT))).toFixed(0) + ' rgb worst (need 60)');
 check('status banner text', ratio([226, 232, 240], [38, 89, 59]), 4.5);
 check('status banner vs page', ratio([38, 89, 59], PAGE), 1.5);
 check('info panel vs page', ratio([34, 46, 68], PAGE), 1.15);
@@ -176,7 +204,8 @@ for (const v of ['rgb(107, 120, 150)', 'rgb(110, 175, 240)', 'rgb(146, 160, 186)
                  'rgb(44, 44, 68)', 'rgb(124, 140, 235)', 'rgb(19, 57, 55)', 'rgb(50, 205, 180)', 'rgb(103, 32, 30)', 'rgb(255, 107, 107)', 'rgb(255, 236, 234)',
                  'rgb(27, 60, 97)', 'rgb(30, 94, 91)', 'rgb(73, 41, 97)', 'rgb(53, 60, 77)', 'rgb(105, 31, 94)', 'rgb(103, 28, 53)', 'rgb(38, 89, 59)',
                  'rgb(60, 40, 78)', 'rgb(26, 54, 82)', 'rgb(34, 46, 68)',
-                 'rgb(18, 66, 96)', 'rgb(20, 64, 62)'])
+                 'rgb(18, 66, 96)', 'rgb(20, 64, 62)',
+                 'rgb(125, 33, 36)', 'rgb(12, 55, 40)', 'rgb(93, 20, 56)'])
   line(css.includes(v), 'css value', v);
 
 // An unguarded rule keeps restyling the portal after the user picks Off -- the bug
