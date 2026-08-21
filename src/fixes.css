@@ -265,7 +265,20 @@ html:not([data-br-dark="off"]) tr[data-testid^="task-"] .MuiChip-root {
    changes the match simply stops and the card falls back to the base rule below.
    Dark Reader wins over the inline attribute with its own !important rule, not by
    rewriting the attribute -- which is why matching on [style*=] still works. */
-html:not([data-br-dark="off"]) [data-testid="note-row"] {
+/* The [style] is LOAD-BEARING, not decoration. Note rows live inside a table cell --
+   div < div < td < tr < tbody -- so rule 24's base, tbody td div[style*="background-color"],
+   matches every one of them and at (0,2,4) outranked this rule at (0,2,1). That shipped
+   in v1.22.0 and flattened every ordinary note back to a flat neutral, which is the exact
+   murk rule 11 exists to prevent; the owner spotted it immediately. The extra attribute
+   takes this to (0,3,1), which wins on the b column regardless of how deeply rule 24
+   nests. Every note row carries an inline background-color from the site, so [style]
+   costs nothing and matches all of them.
+   The teal exception below was never affected -- it already carried a second attribute
+   selector and so was already above rule 24. That is why only the ORDINARY notes
+   regressed and the status-change ones stayed correct, which is a confusing symptom
+   worth recognising: a partial regression like that is a specificity collision, not a
+   broken hook. */
+html:not([data-br-dark="off"]) [data-testid="note-row"][style] {
   background-color: rgb(44, 44, 68) !important;
   border-left: 4px solid rgb(124, 140, 235) !important;
   border-radius: 4px !important;
@@ -968,6 +981,13 @@ html:not([data-br-dark="off"]) [data-testid="toggle-notes-button"]:hover {
    carries border-radius, i.e. is a status box. It cannot reach rule 16's stage boxes
    (those use the `background:` SHORTHAND, a different attribute string) and it loses to
    rule 14's chips on specificity, which is why chips in table cells keep their own map.
+
+   CAUTION -- this base is deliberately broad and it has already collided once. tbody td
+   is not the narrow scope it looks like: the NOTES PANEL is a table too, so this matched
+   all 23 note rows on /tax-orders/<id> and all 9 on /company-order/<id> and, at (0,2,4),
+   outranked rule 11's (0,2,1) base. v1.22.0 shipped that regression. Rule 11 now carries
+   an extra [style] to sit above this. Before adding any selector here, check what else
+   is rendered inside a td on this portal -- the answer is more than you expect.
 
      rgb(189, 213, 255)  the DEFAULT, 17 of 25 and five different statuses -- Order
                          Initiated, Order Pending, Information Needed, Process pending
