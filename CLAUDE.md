@@ -205,9 +205,14 @@ single read each, after I had already started the slow way:
   Fetch the bundle from the page and search it. All four stages that had been measured
   by hand matched it exactly, which is what made the other twelve trustworthy.
 - **Label colours** live on the Label filter's react-select **React fiber** as
-  `options: [{value, label, color}]`. Walk `__reactFiber$…` up via `.return` until a
-  node has `memoizedProps.options`. The Stage select carries only `{label, value}`, so
-  check both before assuming.
+  `options: [{value, label, color}]`. Walk up via `.return` until a node has
+  `memoizedProps.options`. The Stage select carries only `{label, value}`, so check
+  both before assuming.
+  **Read the fiber key off the element, don't assume it.** This app is React 16, where
+  the key is `__reactInternalInstance$…`, not the React 17+ `__reactFiber$…`. A walk
+  written for the wrong key returns nothing and looks exactly like "the data isn't
+  there" — it cost a round on /company-order. `Object.keys(el).find(k => k.startsWith('__react'))`
+  first, every time.
 
 That replaced a plan to have the owner set a test order to each of 16 stages in turn.
 When a colour map is needed, look in the bundle and the fiber first.
@@ -404,6 +409,18 @@ else.**
   Kept as one blue bucket deliberately; splitting it would invent a distinction the site
   does not make. Owner also grouped **Ready to File with Submitted to Government Agency**
   on green (2026-08-20).
+- **`tbody td` IS NOT A NARROW SCOPE ON THIS PORTAL — the notes panel is a table too.**
+  Rule 24's base matched all 23 note rows on `/tax-orders/<id>` and all 9 on
+  `/company-order/<id>`, and at (0,2,4) outranked rule 11's (0,2,1), flattening every
+  ordinary note back to neutral. Shipped in v1.22.0, caught by the owner, fixed in
+  v1.24.0 by giving rule 11 an extra `[style]` → (0,3,1).
+  **The symptom is the lesson: only the ORDINARY notes broke.** The status-change ones
+  survived because their selector already carried a second attribute. When a rule works
+  for some members of a set and not others, suspect a specificity collision, not a
+  broken hook — and count the columns rather than eyeballing the selector.
+  Note rows sit at `div < div < td < tr < tbody`. Before adding any selector scoped to
+  `tbody td`, enumerate what actually renders inside a `td` here; it is more than the
+  tables you are thinking of.
 - **Urgent rows: `rgb(125,33,36)` at 1.56, the others held 1.17–1.25.** Two lessons.
   Rule 15's alarm red — tuned to shout against the *page* — measures only 1.28 against a
   table *row*; **a colour that is loud on one surface is not loud on another, re-measure
@@ -570,5 +587,36 @@ The repo has no committed identity.
   red above the teal success box as intended. **The route is still unrecorded** —
   `/company-tax-order/4326` redirects to the dashboard, so if that page needs
   inspecting again, get the URL from the address bar rather than guessing it.
+- **Two row tints in rule 25 are unverified guesses.** `#EA987A` and `#ff00009c` were
+  taken from the same bundle constants block as the three confirmed ones but have never
+  been seen on a page — they may colour something that is not a row at all. Harmless
+  either way (the selector only fires on a `tr` carrying that inline colour), but if one
+  ever shows up, check it renders sensibly rather than assuming it was right.
 - **Pages never walked:** none — the walk covered all 15. Re-walk after any major
   portal deploy, since MUI hashes and layouts move.
+
+---
+
+## Where things stand (end of 2026-08-20)
+
+`manifest.json` is at **v1.24.0**, everything is committed and pushed to `main`, and
+`node tools/verify-fixes.js` passes 87 checks. `fixes.css` has 25 rules.
+
+Sessions on 2026-08-19/20 took the file from 8 rules to 25. The through-line, worth
+holding on to before touching anything here:
+
+1. **A colour complaint on this portal is almost never a contrast number.** Four of the
+   fixes in this stretch *lowered* measured contrast and all four looked better. Warm
+   pastels converge to the same brown-olive; that is a hue fault a ratio cannot see.
+2. **The engine is not deterministic and does not process every node.** Pin fill *and*
+   text, always. When a surface is *missing* rather than ugly, it is Dark Reader's
+   `body :not(iframe)` fallback painting an unprocessed node the page colour.
+3. **Read the app's own data before collecting anything by eye** — the JS bundle, the
+   React fiber, the site's own stylesheets via `document.styleSheets`. Dark Reader
+   appends overrides rather than rewriting originals, so the site's declared colours are
+   still readable at runtime. That is what `tagAltButtons()` runs on.
+4. **Loudness does not transfer between surfaces.** Rule 15's alarm red shouts against
+   the page and is mid-pack against a table row. Re-measure against the actual backdrop.
+5. **Three scratch files sit untracked at the repo root** — `activenavfindings.md`,
+   `chrome-qa-brief.md`, `qareport.md`. Offered to the owner repeatedly and left alone;
+   don't commit them without being asked.
